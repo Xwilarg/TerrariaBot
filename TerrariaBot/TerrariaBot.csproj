@@ -3,6 +3,25 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>0.1.0-alpha</Version>
+    <Authors>Xwilarg</Authors>
+    <Company />
+    <Product />
+    <Description>A library to make Terraria bots in C#</Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/Xwilarg/TerrariaBot</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Xwilarg/TerrariaBot</RepositoryUrl>
+    <PackageTags>terraria terraria-bot bot-library</PackageTags>
+    <AssemblyVersion>0.0.1.0</AssemblyVersion>
+    <FileVersion>0.0.1.0</FileVersion>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>

@@ -12,6 +12,9 @@
         InitialTileRequest = 8,
         SpawnAnswer = 12,
         CharacterHealth = 16,
+        ItemInfo = 21, // ?
+        ItemOwnerInfo = 22, // ?
+        NPCInfo = 23, // ?
         TogglePVP = 30,
         PasswordRequest = 37,
         PasswordAnswer = 38,

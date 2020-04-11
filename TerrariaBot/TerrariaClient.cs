@@ -8,29 +8,37 @@ namespace TerrariaBot
 {
     public class TerrariaClient
     {
-        public TerrariaClient(string ip, PlayerInformation playerInfos, string serverPassword = "")
+        public TerrariaClient(LogLevel logLevel = LogLevel.Info)
         {
+            _logLevel = logLevel;
+
             _slot = 0;
-            _playerInfos = playerInfos;
-            _password = serverPassword;
             didSpawn = false;
 
             _spawnX = 0;
             _spawnY = 0;
 
-            _client = new TcpClient(ip, 7777);
-            _ns = _client.GetStream();
+            _client = null;
+            _ns = null;
             _listenThread = new Thread(new ThreadStart(Listen));
-            _listenThread.Start();
             SendStringMessage(NetworkRequest.Authentification, version);
         }
 
         ~TerrariaClient()
         {
-            _client.Close();
         }
 
         public event Action ServerJoined;
+
+        public void Connect(string ip, PlayerInformation playerInfos, string serverPassword = "")
+        {
+            _playerInfos = playerInfos;
+            _password = serverPassword;
+            _client = new TcpClient(ip, 7777);
+            _ns = _client.GetStream();
+            _client.Close();
+            _listenThread.Start();
+        }
 
         public void TogglePVP(bool status)
         {
@@ -73,7 +81,7 @@ namespace TerrariaBot
                         buf = new byte[1];
                         _ns.Read(buf, 0, buf.Length);
                         _slot = buf[0];
-                        Console.WriteLine("Player slot is now " + _slot);
+                        LogDebug("Player slot is now " + _slot);
                         SendPlayerInfoMessage();
                         SendPlayerHealth();
                         SendPlayerMana();
@@ -86,19 +94,18 @@ namespace TerrariaBot
                     case NetworkRequest.WorldInfoAnswer:
                         buf = new byte[length];
                         _ns.Read(buf, 0, buf.Length);
-                        Console.WriteLine("World info received");
                         if (!didSpawn)
                         {
                             didSpawn = true;
                             _spawnX = BitConverter.ToInt16(new[] { buf[17], buf[18] });
                             _spawnY = BitConverter.ToInt16(new[] { buf[19], buf[20] });
-                            Console.WriteLine("Sending initial tile request at (" + _spawnX + ";" + _spawnY + ")");
+                            LogDebug("Sending initial tile request at (" + _spawnX + ";" + _spawnY + ")");
                             SendInitialTile(_spawnX, _spawnY);
                         }
                         break;
 
                     case NetworkRequest.SpawnRequest:
-                        Console.WriteLine("Sending spawn request at (" + _spawnX + ";" + _spawnY + ")");
+                        LogInfo("Sending spawn request at (" + _spawnX + ";" + _spawnY + ")");
                         SendSpawnRequest();
                         ServerJoined.Invoke();
                         break;
@@ -108,15 +115,17 @@ namespace TerrariaBot
                             throw new ArgumentException("A password is needed to connect to the server.");
                         else
                         {
-                            Console.WriteLine("Sending password to server");
+                            LogDebug("Sending password to server");
                             SendStringMessage(NetworkRequest.PasswordAnswer, _password);
                         }
                         break;
 
                     case NetworkRequest.EightyTwo:
+                    case NetworkRequest.ItemInfo:
+                    case NetworkRequest.ItemOwnerInfo:
+                    case NetworkRequest.NPCInfo:
                         buf = new byte[length];
                         _ns.Read(buf, 0, buf.Length);
-                        Console.WriteLine("82");
                         break;
 
                     default:
@@ -125,10 +134,22 @@ namespace TerrariaBot
                             buf = new byte[length];
                             _ns.Read(buf, 0, buf.Length);
                         }
-                        Console.WriteLine("Unknown message type " + type);
+                        LogDebug("Unknown message type " + type);
                         break;
                 }
             }
+        }
+
+        private void LogDebug(string message)
+        {
+            if (_logLevel == LogLevel.Debug)
+                Console.WriteLine(message);
+        }
+
+        private void LogInfo(string message)
+        {
+            if (_logLevel <= LogLevel.Info)
+                Console.WriteLine(message);
         }
 
         private void SendWorldInfoRequest()
@@ -238,9 +259,11 @@ namespace TerrariaBot
             return writer;
         }
 
+        private readonly LogLevel _logLevel;
+
         private byte _slot;
         private PlayerInformation _playerInfos;
-        private readonly string _password;
+        private string _password;
         private bool didSpawn;
 
         private int _spawnX, _spawnY;
