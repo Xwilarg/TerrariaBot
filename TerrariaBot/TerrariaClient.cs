@@ -30,7 +30,18 @@ namespace TerrariaBot
             _client.Close();
         }
 
-        public void Listen()
+        public event Action ServerJoined;
+
+        public void JoinTeam(Team teamId)
+        {
+            ushort length = 2;
+            var writer = SendMessage(length, NetworkRequest.JoinTeam);
+            writer.Write(_slot);
+            writer.Write((byte)teamId);
+            writer.Flush();
+        }
+
+        private void Listen()
         {
             while (Thread.CurrentThread.IsAlive)
             {
@@ -77,8 +88,9 @@ namespace TerrariaBot
                         break;
 
                     case NetworkRequest.SpawnRequest:
-                        Console.WriteLine("Sending spawn request");
+                        Console.WriteLine("Sending spawn request at (" + _spawnX + ";" + _spawnY + ")");
                         SendSpawnRequest();
+                        ServerJoined.Invoke();
                         break;
 
                     case NetworkRequest.PasswordRequest:
@@ -109,14 +121,14 @@ namespace TerrariaBot
             }
         }
 
-        public void SendWorldInfoRequest()
+        private void SendWorldInfoRequest()
         {
             ushort length = 0;
             var writer = SendMessage(length, NetworkRequest.WorldInfoRequest);
             writer.Flush();
         }
 
-        public void SendPlayerHealth()
+        private void SendPlayerHealth()
         {
             ushort length = 5;
             var writer = SendMessage(length, NetworkRequest.CharacterHealth);
@@ -126,7 +138,7 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        public void SendPlayerMana()
+        private void SendPlayerMana()
         {
             ushort length = 5;
             var writer = SendMessage(length, NetworkRequest.CharacterMana);
@@ -136,7 +148,7 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        public void SendPlayerBuff()
+        private void SendPlayerBuff()
         {
             ushort length = 11;
             var writer = SendMessage(length, NetworkRequest.CharacterBuff);
@@ -146,7 +158,7 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        public void SendPlayerInventorySlot(byte inventorySlot)
+        private void SendPlayerInventorySlot(byte inventorySlot)
         {
             ushort length = 7;
             var writer = SendMessage(length, NetworkRequest.CharacterMana);
@@ -158,7 +170,7 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        public void SendInitialTile(int spawnX, int spawnY)
+        private void SendInitialTile(int spawnX, int spawnY)
         {
             ushort length = 9;
             var writer = SendMessage(length, NetworkRequest.InitialTileRequest);
@@ -168,7 +180,7 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        public void SendSpawnRequest()
+        private void SendSpawnRequest()
         {
             ushort length = 9;
             var writer = SendMessage(length, NetworkRequest.SpawnAnswer);
@@ -178,7 +190,7 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        public void SendPlayerInfoMessage()
+        private void SendPlayerInfoMessage()
         {
             ushort length = (ushort)(29 + _playerInfos.name.Length + 1);
             var writer = SendMessage(length, NetworkRequest.CharacterCreation);
@@ -201,7 +213,7 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        public void SendStringMessage(NetworkRequest type, string payload)
+        private void SendStringMessage(NetworkRequest type, string payload)
         {
             var writer = SendMessage((ushort)(payload.Length + 1), type);
             writer.Write(payload);
