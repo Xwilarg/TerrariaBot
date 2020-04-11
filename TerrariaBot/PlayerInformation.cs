@@ -4,7 +4,7 @@ namespace TerrariaBot
 {
     public struct PlayerInformation
     {
-        public PlayerInformation(string name, ushort hairVariant, Color hairColor, Color skinColor,
+        public PlayerInformation(string name, byte hairVariant, Color hairColor, Color skinColor,
             Color eyesColor, Color shirtColor, Color underShirtColor, Color pantsColor,
             Color shoesColor, PlayerDifficulty difficulty)
         {
@@ -27,7 +27,7 @@ namespace TerrariaBot
         public static PlayerInformation GetRandomPlayer(string name, PlayerDifficulty difficulty)
         {
             Random r = new Random();
-            return new PlayerInformation(name, (ushort)r.Next(0, 100), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), difficulty);
+            return new PlayerInformation(name, (byte)r.Next(0, 100), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), GetRandomColor(r), difficulty);
         }
 
         private static Color GetRandomColor(Random r)
@@ -36,7 +36,7 @@ namespace TerrariaBot
         }
 
         public string name;
-        public ushort hairVariant;
+        public byte hairVariant;
         public Color hairColor;
         public Color skinColor;
         public Color eyesColor;
