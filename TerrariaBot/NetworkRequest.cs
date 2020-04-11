@@ -10,6 +10,7 @@
         WorldInfoRequest = 6,
         WorldInfoAnswer = 7,
         InitialTileRequest = 8,
+        SpawnAnswer = 12,
         CharacterHealth = 16,
         PasswordRequest = 37,
         PasswordAnswer = 38,
