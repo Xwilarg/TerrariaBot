@@ -1,22 +1,24 @@
 ﻿using System;
 using System.IO;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 
 namespace TerrariaBot
 {
     public class TerrariaClient
     {
-        public TerrariaClient(string ip, PlayerInformation playerInfos)
+        public TerrariaClient(string ip, PlayerInformation playerInfos, string serverPassword = "")
         {
             _slot = 0;
             _playerInfos = playerInfos;
+            _password = serverPassword;
 
             _client = new TcpClient(ip, 7777);
             _ns = _client.GetStream();
             _listenThread = new Thread(new ThreadStart(Listen));
             _listenThread.Start();
-            SendStringMessage(1, version);
+            SendStringMessage(NetworkRequest.Authentification, version);
         }
 
         ~TerrariaClient()
@@ -36,19 +38,41 @@ namespace TerrariaBot
                 buf = new byte[1]; // contains type (uint8)
                 _ns.Read(buf, 0, buf.Length);
                 byte type = buf[0];
-                switch (type)
+                switch ((NetworkRequest)type)
                 {
-                    case 3: // Authentification confirmation
+                    case NetworkRequest.FatalError: // Authentification confirmation
+                        buf = new byte[buf.Length];
+                        _ns.Read(buf, 0, buf.Length);
+                        throw new Exception("Fatal error: " + Encoding.Default.GetString(buf)); // TODO: Doesn't work
+
+                    case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
                         buf = new byte[1];
                         _ns.Read(buf, 0, buf.Length);
                         _slot = buf[0];
                         Console.WriteLine("Player slot is now " + _slot);
-                        SendPlayerInfoMessage();
+                      //  SendPlayerInfoMessage();
+                        break;
+
+                    case NetworkRequest.PasswordRequest:
+                        if (_password == "")
+                            throw new ArgumentException("A password is needed to connect to the server.");
+                        else
+                        {
+                            Console.WriteLine("Sending password to server");
+                            SendStringMessage(NetworkRequest.PasswordAnswer, _password);
+                        }
+                        break;
+
+                    case NetworkRequest.Ping: // TODO: Check content
+                        Console.WriteLine("Ping received?");
                         break;
 
                     default:
-                        buf = new byte[length];
-                        _ns.Read(buf, 0, buf.Length);
+                        if (length > 0)
+                        {
+                            buf = new byte[length];
+                            _ns.Read(buf, 0, buf.Length);
+                        }
                         Console.WriteLine("Unknown message type " + type);
                         break;
                 }
@@ -58,7 +82,7 @@ namespace TerrariaBot
         public void SendPlayerInfoMessage()
         {
             ushort length = (ushort)(29 + _playerInfos.name.Length + 1);
-            var writer = SendMessage(length, 4);
+            var writer = SendMessage(length, NetworkRequest.CharacterCreation);
             writer.Write(_slot);
             writer.Write((byte)1); // Unknown
             writer.Write(_playerInfos.hairVariant); // Hair variant
@@ -78,23 +102,24 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        public void SendStringMessage(byte type, string payload)
+        public void SendStringMessage(NetworkRequest type, string payload)
         {
             var writer = SendMessage((ushort)(payload.Length + 1), type);
             writer.Write(payload);
             writer.Flush();
         }
 
-        private BinaryWriter SendMessage(ushort length, byte type)
+        private BinaryWriter SendMessage(ushort length, NetworkRequest type)
         {
             BinaryWriter writer = new BinaryWriter(_ns);
             writer.Write((ushort)(length + 3));
-            writer.Write(type);
+            writer.Write((byte)type);
             return writer;
         }
 
         private byte _slot;
         private PlayerInformation _playerInfos;
+        private readonly string _password;
 
         private TcpClient _client;
         private NetworkStream _ns;
