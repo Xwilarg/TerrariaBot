@@ -67,13 +67,13 @@ namespace TerrariaBot
             writer.Write((byte)1); // Unknown
             writer.Write((byte)1); // Unknown
             writer.Write((byte)1); // Unknown
-            writer.Write(new byte[] { _playerInfos.hairColor.r, _playerInfos.hairColor.g, _playerInfos.hairColor.b }); // Hair color
-            writer.Write(new byte[] { _playerInfos.skinColor.r, _playerInfos.skinColor.g, _playerInfos.skinColor.b }); // Skin color
-            writer.Write(new byte[] { _playerInfos.eyesColor.r, _playerInfos.eyesColor.g, _playerInfos.eyesColor.b }); // Eyes color
-            writer.Write(new byte[] { _playerInfos.shirtColor.r, _playerInfos.shirtColor.g, _playerInfos.shirtColor.b }); // Shirt color
-            writer.Write(new byte[] { _playerInfos.underShirtColor.r, _playerInfos.underShirtColor.g, _playerInfos.underShirtColor.b }); // Under shirt color
-            writer.Write(new byte[] { _playerInfos.pantsColor.r, _playerInfos.pantsColor.g, _playerInfos.pantsColor.b }); // Pants color
-            writer.Write(new byte[] { _playerInfos.shoesColor.r, _playerInfos.shoesColor.g, _playerInfos.shoesColor.b }); // Shoes color
+            writer.WriteColor(_playerInfos.hairColor); // Hair color
+            writer.WriteColor(_playerInfos.skinColor); // Skin color
+            writer.WriteColor(_playerInfos.eyesColor); // Eyes color
+            writer.WriteColor(_playerInfos.shirtColor); // Shirt color
+            writer.WriteColor(_playerInfos.underShirtColor); // Under shirt color
+            writer.WriteColor(_playerInfos.pantsColor); // Pants color
+            writer.WriteColor(_playerInfos.shoesColor); // Shoes color
             writer.Write((byte)_playerInfos.difficulty); // Difficulty
             writer.Flush();
         }
@@ -88,7 +88,7 @@ namespace TerrariaBot
         private BinaryWriter SendMessage(ushort length, byte type)
         {
             BinaryWriter writer = new BinaryWriter(_ns);
-            writer.Write(length);
+            writer.Write((ushort)(length + 3));
             writer.Write(type);
             return writer;
         }
