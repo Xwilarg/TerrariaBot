@@ -21,11 +21,12 @@ namespace TerrariaBot
             _client = null;
             _ns = null;
             _listenThread = new Thread(new ThreadStart(Listen));
-            SendStringMessage(NetworkRequest.Authentification, version);
         }
 
         ~TerrariaClient()
         {
+            _ns.Close();
+            _client.Close();
         }
 
         public event Action ServerJoined;
@@ -36,8 +37,8 @@ namespace TerrariaBot
             _password = serverPassword;
             _client = new TcpClient(ip, 7777);
             _ns = _client.GetStream();
-            _client.Close();
             _listenThread.Start();
+            SendStringMessage(NetworkRequest.Authentification, version);
         }
 
         public void TogglePVP(bool status)
@@ -120,10 +121,11 @@ namespace TerrariaBot
                         }
                         break;
 
-                    case NetworkRequest.EightyTwo:
+                    case NetworkRequest.CharacterInventorySlot:
                     case NetworkRequest.ItemInfo:
                     case NetworkRequest.ItemOwnerInfo:
                     case NetworkRequest.NPCInfo:
+                    case NetworkRequest.EightyTwo:
                         buf = new byte[length];
                         _ns.Read(buf, 0, buf.Length);
                         break;
@@ -246,6 +248,8 @@ namespace TerrariaBot
 
         private void SendStringMessage(NetworkRequest type, string payload)
         {
+            if (_client == null)
+                throw new NullReferenceException("You must call Connect() before doing bot requests");
             var writer = SendMessage((ushort)(payload.Length + 1), type);
             writer.Write(payload);
             writer.Flush();
