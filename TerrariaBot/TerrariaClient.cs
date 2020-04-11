@@ -37,7 +37,6 @@ namespace TerrariaBot
                     }
                 }
             }
-
         }
 
         public void SendMessage(byte type, string payload)

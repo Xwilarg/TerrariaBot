@@ -1,8 +1,5 @@
-﻿using System.Runtime.InteropServices;
-
-namespace TerrariaBot
+﻿namespace TerrariaBot
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct NetworkMessage
     {
         public ushort length;
