@@ -12,6 +12,7 @@
         InitialTileRequest = 8,
         SpawnAnswer = 12,
         CharacterHealth = 16,
+        TogglePVP = 30,
         PasswordRequest = 37,
         PasswordAnswer = 38,
         CharacterMana = 42,

@@ -32,6 +32,15 @@ namespace TerrariaBot
 
         public event Action ServerJoined;
 
+        public void TogglePVP(bool status)
+        {
+            ushort length = 2;
+            var writer = SendMessage(length, NetworkRequest.TogglePVP);
+            writer.Write(_slot);
+            writer.Write((byte)(status ? 1 : 0));
+            writer.Flush();
+        }
+
         public void JoinTeam(Team teamId)
         {
             ushort length = 2;
@@ -81,8 +90,9 @@ namespace TerrariaBot
                         if (!didSpawn)
                         {
                             didSpawn = true;
-                            _spawnX = BitConverter.ToInt32(new[] { buf[16], buf[17], buf[18], buf[19] });
-                            _spawnY = BitConverter.ToInt32(new[] { buf[20], buf[21], buf[22], buf[23] });
+                            _spawnX = BitConverter.ToInt16(new[] { buf[17], buf[18] });
+                            _spawnY = BitConverter.ToInt16(new[] { buf[19], buf[20] });
+                            Console.WriteLine("Sending initial tile request at (" + _spawnX + ";" + _spawnY + ")");
                             SendInitialTile(_spawnX, _spawnY);
                         }
                         break;
