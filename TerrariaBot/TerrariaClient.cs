@@ -13,6 +13,7 @@ namespace TerrariaBot
             _slot = 0;
             _playerInfos = playerInfos;
             _password = serverPassword;
+            didSpawn = false;
 
             _client = new TcpClient(ip, 7777);
             _ns = _client.GetStream();
@@ -50,7 +51,29 @@ namespace TerrariaBot
                         _ns.Read(buf, 0, buf.Length);
                         _slot = buf[0];
                         Console.WriteLine("Player slot is now " + _slot);
-                      //  SendPlayerInfoMessage();
+                        SendPlayerInfoMessage();
+                        SendPlayerHealth();
+                        SendPlayerMana();
+                        SendPlayerBuff();
+                        for (byte i = 0; i < 92; i++)
+                            SendPlayerInventorySlot(i);
+                        SendWorldInfoRequest();
+                        break;
+
+                    case NetworkRequest.WorldInfoAnswer:
+                        buf = new byte[length];
+                        _ns.Read(buf, 0, buf.Length);
+                        Console.WriteLine("World info received");
+                        if (!didSpawn)
+                        {
+                            didSpawn = true;
+                            SendInitialTile(BitConverter.ToInt32(new[] { buf[16], buf[17], buf[18], buf[19] }),
+                                BitConverter.ToInt32(new[] { buf[20], buf[21], buf[22], buf[23] }));
+                        }
+                        break;
+
+                    case NetworkRequest.SpawnRequest:
+                        Console.WriteLine("Received spawn request");
                         break;
 
                     case NetworkRequest.PasswordRequest:
@@ -63,8 +86,10 @@ namespace TerrariaBot
                         }
                         break;
 
-                    case NetworkRequest.Ping: // TODO: Check content
-                        Console.WriteLine("Ping received?");
+                    case NetworkRequest.EightyTwo:
+                        buf = new byte[length];
+                        _ns.Read(buf, 0, buf.Length);
+                        Console.WriteLine("82");
                         break;
 
                     default:
@@ -77,6 +102,65 @@ namespace TerrariaBot
                         break;
                 }
             }
+        }
+
+        public void SendWorldInfoRequest()
+        {
+            ushort length = 0;
+            var writer = SendMessage(length, NetworkRequest.WorldInfoRequest);
+            writer.Flush();
+        }
+
+        public void SendPlayerHealth()
+        {
+            ushort length = 5;
+            var writer = SendMessage(length, NetworkRequest.CharacterHealth);
+            writer.Write(_slot);
+            writer.Write((short)100);
+            writer.Write((short)100);
+            writer.Flush();
+        }
+
+        public void SendPlayerMana()
+        {
+            ushort length = 5;
+            var writer = SendMessage(length, NetworkRequest.CharacterMana);
+            writer.Write(_slot);
+            writer.Write((short)20);
+            writer.Write((short)20);
+            writer.Flush();
+        }
+
+        public void SendPlayerBuff()
+        {
+            ushort length = 11;
+            var writer = SendMessage(length, NetworkRequest.CharacterBuff);
+            writer.Write(_slot);
+            for (int i = 0; i < 10; i++)
+                writer.Write((byte)0);
+            writer.Flush();
+        }
+
+        public void SendPlayerInventorySlot(byte inventorySlot)
+        {
+            ushort length = 7;
+            var writer = SendMessage(length, NetworkRequest.CharacterMana);
+            writer.Write(_slot);
+            writer.Write(inventorySlot);
+            writer.Write((short)0);
+            writer.Write((byte)0);
+            writer.Write((short)0);
+            writer.Flush();
+        }
+
+        public void SendInitialTile(int spawnX, int spawnY)
+        {
+            ushort length = 5;
+            var writer = SendMessage(length, NetworkRequest.InitialTileRequest);
+            writer.Write(_slot);
+            writer.Write(spawnX);
+            writer.Write(spawnY);
+            writer.Flush();
         }
 
         public void SendPlayerInfoMessage()
@@ -120,11 +204,11 @@ namespace TerrariaBot
         private byte _slot;
         private PlayerInformation _playerInfos;
         private readonly string _password;
+        private bool didSpawn;
 
         private TcpClient _client;
         private NetworkStream _ns;
         private Thread _listenThread;
-
 
         private const string version = "Terraria194";
     }

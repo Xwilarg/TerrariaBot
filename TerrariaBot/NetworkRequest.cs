@@ -6,8 +6,16 @@
         FatalError = 2,
         AuthentificationSuccess = 3,
         CharacterCreation = 4,
+        CharacterInventorySlot = 5,
+        WorldInfoRequest = 6,
+        WorldInfoAnswer = 7,
+        InitialTileRequest = 8,
+        CharacterHealth = 16,
         PasswordRequest = 37,
         PasswordAnswer = 38,
-        Ping = 82
+        CharacterMana = 42,
+        SpawnRequest = 49,
+        CharacterBuff = 50,
+        EightyTwo = 82
     }
 }
