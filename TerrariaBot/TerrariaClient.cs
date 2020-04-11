@@ -122,10 +122,18 @@ namespace TerrariaBot
                         break;
 
                     case NetworkRequest.CharacterInventorySlot:
+                    case NetworkRequest.Status:
+                    case NetworkRequest.TileRowData:
+                    case NetworkRequest.RecalculateUV:
+                    case NetworkRequest.BlockUpdate:
                     case NetworkRequest.ItemInfo:
                     case NetworkRequest.ItemOwnerInfo:
                     case NetworkRequest.NPCInfo:
+                    case NetworkRequest.EvilRatio:
+                    case NetworkRequest.DailyAnglerQuestFinished:
                     case NetworkRequest.EightyTwo:
+                    case NetworkRequest.EightyThree:
+                    case NetworkRequest.TowerShieldStrength:
                         buf = new byte[length];
                         _ns.Read(buf, 0, buf.Length);
                         break;
