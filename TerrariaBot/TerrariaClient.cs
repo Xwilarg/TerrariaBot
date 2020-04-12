@@ -83,7 +83,7 @@ namespace TerrariaBot
                 byte type = buf[0];
                 switch ((NetworkRequest)type)
                 {
-                    case NetworkRequest.FatalError: // Authentification confirmation
+                    case NetworkRequest.FatalError: // Any fatal error that occured lead here
                         buf = new byte[buf.Length];
                         _ns.Read(buf, 0, buf.Length);
                         throw new System.Exception("Fatal error: " + Encoding.Default.GetString(buf)); // TODO: Doesn't work
@@ -102,7 +102,7 @@ namespace TerrariaBot
                         SendWorldInfoRequest();
                         break;
 
-                    case NetworkRequest.WorldInfoAnswer:
+                    case NetworkRequest.WorldInfoAnswer: // Various basic information about the world
                         buf = new byte[length];
                         _ns.Read(buf, 0, buf.Length);
                         if (!_didSpawn)
@@ -128,13 +128,13 @@ namespace TerrariaBot
                         }
                         break;
 
-                    case NetworkRequest.SpawnRequest:
+                    case NetworkRequest.SpawnRequest: // When this is received, need to reply with spawn location
                         LogInfo("Sending spawn request at (" + _spawnX + ";" + _spawnY + ")");
                         SendSpawnRequest();
                         ServerJoined.Invoke();
                         break;
 
-                    case NetworkRequest.PasswordRequest:
+                    case NetworkRequest.PasswordRequest: // The server need a password to be joined
                         if (_password == "")
                             throw new ArgumentException("A password is needed to connect to the server.");
                         else
@@ -144,7 +144,13 @@ namespace TerrariaBot
                         }
                         break;
 
-                    case NetworkRequest.TileRowData:
+                    case NetworkRequest.TileRowData: // Some information about a row of tile?
+                        buf = new byte[length];
+                        _ns.Read(buf, 0, buf.Length);
+                        short width = BitConverter.ToInt16(new[] { buf[0], buf[1] });
+                        int tileX = BitConverter.ToInt32(new[] { buf[2], buf[3], buf[4], buf[5] });
+                        int tileY = BitConverter.ToInt32(new[] { buf[6], buf[7], buf[8], buf[9] });
+                        LogDebug("Updating " + width + " tiles beginning at (" + tileX + ";" + tileY + ")");
                         break;
 
                     case NetworkRequest.CharacterInventorySlot:
@@ -154,10 +160,15 @@ namespace TerrariaBot
                     case NetworkRequest.ItemInfo:
                     case NetworkRequest.ItemOwnerInfo:
                     case NetworkRequest.NPCInfo:
+                    case NetworkRequest.UpdateProjectile:
+                    case NetworkRequest.DeleteProjectile:
                     case NetworkRequest.EvilRatio:
                     case NetworkRequest.DailyAnglerQuestFinished:
                     case NetworkRequest.EightyTwo:
                     case NetworkRequest.EightyThree:
+                    case NetworkRequest.CharacterStealth:
+                    case NetworkRequest.InventoryItemInfo:
+                    case NetworkRequest.NinetySix:
                     case NetworkRequest.TowerShieldStrength:
                         buf = new byte[length];
                         _ns.Read(buf, 0, buf.Length);
