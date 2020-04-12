@@ -13,7 +13,8 @@ namespace TerrariaBot
             _logLevel = logLevel;
 
             _slot = 0;
-            didSpawn = false;
+            _didSpawn = false;
+            _cheats = false;
 
             _spawnX = 0;
             _spawnY = 0;
@@ -59,6 +60,15 @@ namespace TerrariaBot
             writer.Flush();
         }
 
+        public void ToogleCheats(bool value)
+        {
+            _cheats = value;
+            if (_cheats)
+                LogWarning("Cheats were enabled.");
+            else
+                LogWarning("Cheats were disabled.");
+        }
+
         private void Listen()
         {
             while (Thread.CurrentThread.IsAlive)
@@ -76,7 +86,7 @@ namespace TerrariaBot
                     case NetworkRequest.FatalError: // Authentification confirmation
                         buf = new byte[buf.Length];
                         _ns.Read(buf, 0, buf.Length);
-                        throw new Exception("Fatal error: " + Encoding.Default.GetString(buf)); // TODO: Doesn't work
+                        throw new System.Exception("Fatal error: " + Encoding.Default.GetString(buf)); // TODO: Doesn't work
 
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
                         buf = new byte[1];
@@ -95,9 +105,9 @@ namespace TerrariaBot
                     case NetworkRequest.WorldInfoAnswer:
                         buf = new byte[length];
                         _ns.Read(buf, 0, buf.Length);
-                        if (!didSpawn)
+                        if (!_didSpawn)
                         {
-                            didSpawn = true;
+                            _didSpawn = true;
                             int time = BitConverter.ToInt32(new[] { buf[0], buf[1], buf[2], buf[3] });
                             byte moonInfo = buf[4];
                             byte moonPhase = buf[5];
@@ -134,9 +144,11 @@ namespace TerrariaBot
                         }
                         break;
 
+                    case NetworkRequest.TileRowData:
+                        break;
+
                     case NetworkRequest.CharacterInventorySlot:
                     case NetworkRequest.Status:
-                    case NetworkRequest.TileRowData:
                     case NetworkRequest.RecalculateUV:
                     case NetworkRequest.BlockUpdate:
                     case NetworkRequest.ItemInfo:
@@ -166,6 +178,13 @@ namespace TerrariaBot
         private bool ByteToBool(byte b, int offset)
             => (b & offset) != 0;
 
+        private void CheatCheck()
+        {
+            if (!_cheats)
+                throw new Exception.CheatNotEnabled();
+        }
+
+        #region LogFunctions
         private void LogDebug<T>(T message)
         {
             if (_logLevel == LogLevel.Debug)
@@ -190,7 +209,9 @@ namespace TerrariaBot
             Console.WriteLine(message);
             Console.ForegroundColor = color;
         }
+        #endregion LogFunctions
 
+        #region ServerRequestFunctions
         private void SendWorldInfoRequest()
         {
             ushort length = 0;
@@ -299,15 +320,17 @@ namespace TerrariaBot
             writer.Write((byte)type);
             return writer;
         }
+        #endregion ServerRequestFunctions
 
         private readonly LogLevel _logLevel;
 
-        private byte _slot;
-        private PlayerInformation _playerInfos;
-        private string _password;
-        private bool didSpawn;
+        private byte _slot; // Player id
+        private PlayerInformation _playerInfos; // All basic information about the player appearance
+        private string _password; // Server password, "" if none
+        private bool _didSpawn; // Did the player already spawned
+        private bool _cheats; // Are cheats enabled
 
-        private int _spawnX, _spawnY;
+        private int _spawnX, _spawnY; // Spawn position
 
         private TcpClient _client;
         private NetworkStream _ns;
