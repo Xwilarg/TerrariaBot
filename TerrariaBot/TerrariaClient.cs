@@ -98,9 +98,22 @@ namespace TerrariaBot
                         if (!didSpawn)
                         {
                             didSpawn = true;
-                            _spawnX = BitConverter.ToInt16(new[] { buf[17], buf[18] });
-                            _spawnY = BitConverter.ToInt16(new[] { buf[19], buf[20] });
-                            LogDebug("Sending initial tile request at (" + _spawnX + ";" + _spawnY + ")");
+                            int time = BitConverter.ToInt32(new[] { buf[0], buf[1], buf[2], buf[3] });
+                            byte moonInfo = buf[4];
+                            byte moonPhase = buf[5];
+                            short maxTilesX = BitConverter.ToInt16(new[] { buf[6], buf[7] });
+                            short maxTilesY = BitConverter.ToInt16(new[] { buf[8], buf[9] });
+                            _spawnX = BitConverter.ToInt16(new[] { buf[10], buf[11] });
+                            _spawnY = BitConverter.ToInt16(new[] { buf[12], buf[23] });
+                            LogDebug("Current time is " + time);
+                            LogDebug(ByteToBool(moonInfo, 1) ? "It's currently day time" : "It's currently night time");
+                            LogDebug(ByteToBool(moonInfo, 2) ? "It's currently the blood moon" : "It's not currently the blood moon");
+                            LogDebug(ByteToBool(moonInfo, 4) ? "It's currently an eclipse" : "It's not currently an eclipse");
+                            LogDebug("The current moon phrase is " + moonPhase);
+                            LogDebug("Maximum world value at (" + maxTilesX + ";" + maxTilesY + ")");
+                            LogDebug("Spawn position at (" + _spawnX + ";" + _spawnY + ")");
+                            if (_spawnX >= maxTilesX || _spawnY >= maxTilesY)
+                                LogWarning("It appears that the spawn location is the same as the maximum world value. This means the bot will spawn in a weird location.");
                             SendInitialTile(_spawnX, _spawnY);
                         }
                         break;
@@ -150,16 +163,32 @@ namespace TerrariaBot
             }
         }
 
-        private void LogDebug(string message)
+        private bool ByteToBool(byte b, int offset)
+            => (b & offset) != 0;
+
+        private void LogDebug<T>(T message)
         {
             if (_logLevel == LogLevel.Debug)
+            {
+                var color = Console.ForegroundColor;
+                Console.ForegroundColor = ConsoleColor.DarkGray;
                 Console.WriteLine(message);
+                Console.ForegroundColor = color;
+            }
         }
 
-        private void LogInfo(string message)
+        private void LogInfo<T>(T message)
         {
             if (_logLevel <= LogLevel.Info)
                 Console.WriteLine(message);
+        }
+
+        private void LogWarning<T>(T message)
+        {
+            var color = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(message);
+            Console.ForegroundColor = color;
         }
 
         private void SendWorldInfoRequest()
