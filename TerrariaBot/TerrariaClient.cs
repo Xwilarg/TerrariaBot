@@ -113,7 +113,7 @@ namespace TerrariaBot
                             LogDebug("Maximum world value at (" + maxTilesX + ";" + maxTilesY + ")");
                             LogDebug("Spawn position at (" + _spawnX + ";" + _spawnY + ")");
                             if (_spawnX >= maxTilesX || _spawnY >= maxTilesY)
-                                LogWarning("It appears that the spawn location is the same as the maximum world value. This means the bot will spawn in a weird location.");
+                                LogWarning("It appears that the spawn location is at an odd value. This may means that the bot will spawn out of bounds.");
                             SendInitialTile(_spawnX, _spawnY);
                         }
                         break;
