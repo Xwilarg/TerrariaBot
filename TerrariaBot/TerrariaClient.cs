@@ -75,11 +75,7 @@ namespace TerrariaBot
                         _me = new PlayerSelf(this, slot);
                         LogDebug("Player slot is now " + slot);
                         SendPlayerInfoMessage();
-                        SendPlayerHealth();
-                        SendPlayerMana();
-                        SendPlayerBuff();
-                        for (byte i = 0; i < 92; i++)
-                            SendPlayerInventorySlot(i);
+                        // We don't send our health/mana/etc because we keep the default one
                         SendWorldInfoRequest();
                         break;
 
