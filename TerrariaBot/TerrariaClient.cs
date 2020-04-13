@@ -39,7 +39,7 @@ namespace TerrariaBot
         /// <param name="playerInfos">Information about player's appearance</param>
         /// <param name="serverPassword">Server password if needed</param>
         /// <param name="modifier">Stats modifiers. Cheats must be enabled if not null</param>
-        public void Connect(string ip, PlayerInformation playerInfos, string serverPassword = "", PlayerStartModifier? modifier = null)
+        public virtual void Connect(string ip, PlayerInformation playerInfos, string serverPassword = "", PlayerStartModifier? modifier = null)
         {
             if (modifier != null)
                 CheatCheck();
