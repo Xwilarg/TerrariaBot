@@ -10,19 +10,19 @@ namespace TerrariaBot.Entity
         public void TogglePVP(bool status)
         {
             ushort length = 2;
-            var writer = _client.SendMessage(length, NetworkRequest.TogglePVP);
+            var writer = _client.WriteHeader(length, NetworkRequest.TogglePVP);
             writer.Write(_slot);
             writer.Write((byte)(status ? 1 : 0));
-            writer.Flush();
+            _client.SendWrittenBytes();
         }
 
         public void JoinTeam(Team teamId)
         {
             ushort length = 2;
-            var writer = _client.SendMessage(length, NetworkRequest.JoinTeam);
+            var writer = _client.WriteHeader(length, NetworkRequest.JoinTeam);
             writer.Write(_slot);
             writer.Write((byte)teamId);
-            writer.Flush();
+            _client.SendWrittenBytes();
         }
     }
 }

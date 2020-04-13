@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using TerrariaBot.Entity;
@@ -18,11 +19,13 @@ namespace TerrariaBot.Client
             _didSpawn = false;
             _cheats = false;
 
+            _ms = null;
+
             _listenThread = new Thread(new ThreadStart(Listen));
         }
 
-        internal abstract byte[] ReadMessage(out NetworkRequest messageType);
-        internal abstract BinaryWriter SendMessage(ushort length, NetworkRequest type);
+        internal abstract byte[] ReadMessage();
+        internal abstract void SendMessage(byte[] message);
 
         public event Action<PlayerSelf> ServerJoined;
 
@@ -51,7 +54,10 @@ namespace TerrariaBot.Client
             while (Thread.CurrentThread.IsAlive)
             {
                 NetworkRequest type;
-                byte[] payload = ReadMessage(out type);
+                byte[] message = ReadMessage();
+                type = (NetworkRequest)message[0];
+                byte[] payload;
+                payload = message.Skip(1).ToArray();
                 switch (type)
                 {
                     case NetworkRequest.FatalError: // Any fatal error that occured lead here
@@ -205,76 +211,76 @@ namespace TerrariaBot.Client
         private void SendWorldInfoRequest()
         {
             ushort length = 0;
-            var writer = SendMessage(length, NetworkRequest.WorldInfoRequest);
-            writer.Flush();
+            WriteHeader(length, NetworkRequest.WorldInfoRequest);
+            SendWrittenBytes();
         }
 
         private void SendPlayerHealth(short health)
         {
             ushort length = 5;
-            var writer = SendMessage(length, NetworkRequest.CharacterHealth);
+            var writer = WriteHeader(length, NetworkRequest.CharacterHealth);
             writer.Write(_me.GetSlot());
             writer.Write(health);
             writer.Write(health);
-            writer.Flush();
+            SendWrittenBytes();
         }
 
         private void SendPlayerMana(short mana)
         {
             ushort length = 5;
-            var writer = SendMessage(length, NetworkRequest.CharacterMana);
+            var writer = WriteHeader(length, NetworkRequest.CharacterMana);
             writer.Write(_me.GetSlot());
             writer.Write(mana);
             writer.Write(mana);
-            writer.Flush();
+            SendWrittenBytes();
         }
 
         private void SendPlayerBuff()
         {
             ushort length = 11;
-            var writer = SendMessage(length, NetworkRequest.CharacterBuff);
+            var writer = WriteHeader(length, NetworkRequest.CharacterBuff);
             writer.Write(_me.GetSlot());
             for (int i = 0; i < 10; i++)
                 writer.Write((byte)0);
-            writer.Flush();
+            SendWrittenBytes();
         }
 
         private void SendPlayerInventorySlot(byte inventorySlot)
         {
             ushort length = 7;
-            var writer = SendMessage(length, NetworkRequest.CharacterMana);
+            var writer = WriteHeader(length, NetworkRequest.CharacterMana);
             writer.Write(_me.GetSlot());
             writer.Write(inventorySlot);
             writer.Write((short)0);
             writer.Write((byte)0);
             writer.Write((short)0);
-            writer.Flush();
+            SendWrittenBytes();
         }
 
         private void SendInitialTile()
         {
             ushort length = 9;
-            var writer = SendMessage(length, NetworkRequest.InitialTileRequest);
+            var writer = WriteHeader(length, NetworkRequest.InitialTileRequest);
             writer.Write(_me.GetSlot());
             writer.Write(-1);
             writer.Write(-1);
-            writer.Flush();
+            SendWrittenBytes();
         }
 
         private void SendSpawnRequest()
         {
             ushort length = 9;
-            var writer = SendMessage(length, NetworkRequest.SpawnAnswer);
+            var writer = WriteHeader(length, NetworkRequest.SpawnAnswer);
             writer.Write(_me.GetSlot());
             writer.Write(-1);
             writer.Write(-1);
-            writer.Flush();
+            SendWrittenBytes();
         }
 
         private void SendPlayerInfoMessage()
         {
             ushort length = (ushort)(29 + _playerInfos.name.Length + 1);
-            var writer = SendMessage(length, NetworkRequest.CharacterCreation);
+            var writer = WriteHeader(length, NetworkRequest.CharacterCreation);
             writer.Write(_me.GetSlot());
             writer.Write((byte)1); // Unknown
             writer.Write(_playerInfos.hairVariant); // Hair variant
@@ -291,15 +297,28 @@ namespace TerrariaBot.Client
             writer.WriteColor(_playerInfos.pantsColor); // Pants color
             writer.WriteColor(_playerInfos.shoesColor); // Shoes color
             writer.Write((byte)_playerInfos.difficulty); // Difficulty
-            writer.Flush();
+            SendWrittenBytes();
         }
 
         private void SendStringMessage(NetworkRequest type, string payload)
         {
-            var writer = SendMessage((ushort)(payload.Length + 1), type);
+            var writer = WriteHeader((ushort)(payload.Length + 1), type);
             writer.Write(payload);
-            writer.Flush();
+            SendWrittenBytes();
         }
+
+        internal BinaryWriter WriteHeader(ushort length, NetworkRequest type)
+        {
+            if (_ms != null)
+                _ms.Close();
+            _ms = new MemoryStream();
+            BinaryWriter writer = new BinaryWriter(_ms);
+            writer.Write((ushort)(length + 3));
+            writer.Write((byte)type);
+            return writer;
+        }
+
+        internal void SendWrittenBytes() => SendMessage(_ms.ToArray());
         #endregion ServerRequestFunctions
 
         private readonly LogLevel _logLevel;
@@ -311,6 +330,8 @@ namespace TerrariaBot.Client
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
         private bool _cheats; // Are cheats enabled
+
+        private MemoryStream _ms;
 
         private Thread _listenThread;
 

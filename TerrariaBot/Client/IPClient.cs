@@ -22,35 +22,24 @@ namespace TerrariaBot.Client
             InitPlayerInfos(playerInfos, serverPassword, modifier);
         }
 
-        internal override byte[] ReadMessage(out NetworkRequest messageType)
+        internal override byte[] ReadMessage()
         {
             byte[] buf = new byte[2]; // contains length (uint16)
             _ns.Read(buf, 0, 2);
-            // Length contains the length of the length (2 octets), the type (1 octet) and the payload
-            // We remove 3 to only keep the length of the payload
-            int length = BitConverter.ToUInt16(buf) - 3;
-            buf = new byte[1]; // contains type (uint8)
-            _ns.Read(buf, 0, 1);
-            messageType = (NetworkRequest)buf[0];
-            byte[] payload;
-            if (length > 0)
-            {
-                payload = new byte[length];
-                _ns.Read(payload, 0, payload.Length);
-            }
-            else
-                payload = new byte[0];
-            return payload;
+            // Length contains the length of the length (2 octets)
+            int length = BitConverter.ToUInt16(buf) - 2;
+            buf = new byte[length];
+            _ns.Read(buf, 0, length);
+            return buf;
         }
 
-        internal override BinaryWriter SendMessage(ushort length, NetworkRequest type)
+        internal override void SendMessage(byte[] message)
         {
             if (_client == null)
                 throw new NullReferenceException("You must call ConnectWithIP() before doing bot requests");
             BinaryWriter writer = new BinaryWriter(_ns);
-            writer.Write((ushort)(length + 3));
-            writer.Write((byte)type);
-            return writer;
+            _ns.Write(message);
+            _ns.Flush();
         }
 
         private TcpClient _client;
