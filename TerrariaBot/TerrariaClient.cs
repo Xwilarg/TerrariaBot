@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Sockets;
 using System.Text;
@@ -14,6 +15,7 @@ namespace TerrariaBot
             _logLevel = logLevel;
 
             _me = null;
+            _otherPlayers = new Dictionary<byte, Player>();
             _didSpawn = false;
             _cheats = false;
 
@@ -79,21 +81,35 @@ namespace TerrariaBot
                         throw new System.Exception("Fatal error: " + Encoding.Default.GetString(buf)); // TODO: Doesn't work
 
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
-                        buf = new byte[1];
-                        _ns.Read(buf, 0, buf.Length);
-                        byte slot = buf[0];
-                        _me = new PlayerSelf(this, slot);
-                        LogDebug("Player slot is now " + slot);
-                        SendPlayerInfoMessage();
-                        // We don't send our health/mana/etc because we keep the default one
-                        if (_modifier != null)
                         {
-                            if (_modifier.Value.healthModifier.HasValue)
-                                SendPlayerHealth(_modifier.Value.healthModifier.Value);
-                            if (_modifier.Value.manaModifier.HasValue)
-                                SendPlayerMana(_modifier.Value.manaModifier.Value);
+                            buf = new byte[1];
+                            _ns.Read(buf, 0, buf.Length);
+                            byte slot = buf[0];
+                            _me = new PlayerSelf(this, slot);
+                            LogDebug("Player slot is now " + slot);
+                            SendPlayerInfoMessage();
+                            // We don't send our health/mana/etc because we keep the default one
+                            if (_modifier != null)
+                            {
+                                if (_modifier.Value.healthModifier.HasValue)
+                                    SendPlayerHealth(_modifier.Value.healthModifier.Value);
+                                if (_modifier.Value.manaModifier.HasValue)
+                                    SendPlayerMana(_modifier.Value.manaModifier.Value);
+                            }
+                            SendWorldInfoRequest();
                         }
-                        SendWorldInfoRequest();
+                        break;
+
+                    case NetworkRequest.CharacterCreation:
+                        {
+                            buf = new byte[length];
+                            _ns.Read(buf, 0, length);
+                            byte slot = buf[0];
+                            if (!_otherPlayers.ContainsKey(slot))
+                            {
+                                _otherPlayers.Add(slot, new Player(this, slot));
+                            }
+                        }
                         break;
 
                     case NetworkRequest.WorldInfoAnswer: // Various basic information about the world
@@ -325,6 +341,7 @@ namespace TerrariaBot
         private readonly LogLevel _logLevel;
 
         private PlayerSelf _me;
+        Dictionary<byte, Player> _otherPlayers;
         private PlayerInformation _playerInfos; // All basic information about the player appearance
         private PlayerStartModifier? _modifier;
         private string _password; // Server password, "" if none
