@@ -202,7 +202,7 @@ namespace TerrariaBot
         }
 
         #region LogFunctions
-        private void LogDebug<T>(T message)
+        protected void LogDebug<T>(T message)
         {
             if (_logLevel == LogLevel.Debug)
             {
@@ -213,13 +213,24 @@ namespace TerrariaBot
             }
         }
 
-        private void LogInfo<T>(T message)
+        protected void LogInfo<T>(T message)
         {
             if (_logLevel <= LogLevel.Info)
                 Console.WriteLine(message);
         }
 
-        private void LogWarning<T>(T message)
+        protected void LogWarning<T>(T message)
+        {
+            var color = Console.ForegroundColor;
+            if (_logLevel <= LogLevel.Warning)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine(message);
+                Console.ForegroundColor = color;
+            }
+        }
+
+        protected void LogError<T>(T message)
         {
             var color = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
