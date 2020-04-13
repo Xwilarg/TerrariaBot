@@ -24,8 +24,8 @@ namespace TerrariaBot.Client
             _listenThread = new Thread(new ThreadStart(Listen));
         }
 
-        internal abstract byte[] ReadMessage();
-        internal abstract void SendMessage(byte[] message);
+        protected abstract byte[] ReadMessage();
+        protected abstract void SendMessage(byte[] message);
 
         public event Action<PlayerSelf> ServerJoined;
 
@@ -55,6 +55,8 @@ namespace TerrariaBot.Client
             {
                 NetworkRequest type;
                 byte[] message = ReadMessage();
+                if (message.Length == 0)
+                    continue;
                 type = (NetworkRequest)message[0];
                 byte[] payload;
                 payload = message.Skip(1).ToArray();

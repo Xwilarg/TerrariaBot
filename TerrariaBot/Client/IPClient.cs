@@ -22,7 +22,7 @@ namespace TerrariaBot.Client
             InitPlayerInfos(playerInfos, serverPassword, modifier);
         }
 
-        internal override byte[] ReadMessage()
+        protected override byte[] ReadMessage()
         {
             byte[] buf = new byte[2]; // contains length (uint16)
             _ns.Read(buf, 0, 2);
@@ -33,11 +33,10 @@ namespace TerrariaBot.Client
             return buf;
         }
 
-        internal override void SendMessage(byte[] message)
+        protected override void SendMessage(byte[] message)
         {
             if (_client == null)
                 throw new NullReferenceException("You must call ConnectWithIP() before doing bot requests");
-            BinaryWriter writer = new BinaryWriter(_ns);
             _ns.Write(message);
             _ns.Flush();
         }

@@ -2,8 +2,7 @@
 
 namespace TerrariaBot.Client
 {
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public enum NetworkRequest
+    internal enum NetworkRequest
     {
         Authentification = 1,
         FatalError = 2,
