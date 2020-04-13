@@ -1,8 +1,10 @@
-﻿namespace TerrariaBot.Entity
+﻿using TerrariaBot.Client;
+
+namespace TerrariaBot.Entity
 {
     public class Player
     {
-        public Player(TerrariaClient client, byte slot)
+        public Player(AClient client, byte slot)
         {
             _client = client;
             _slot = slot;
@@ -10,7 +12,7 @@
 
         public byte GetSlot() => _slot;
 
-        protected TerrariaClient _client;
+        protected AClient _client;
         protected byte _slot;
     }
 }

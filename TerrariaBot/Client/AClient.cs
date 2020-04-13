@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using TerrariaBot.Entity;
 
-namespace TerrariaBot
+namespace TerrariaBot.Client
 {
-    public class TerrariaClient
+    public abstract class AClient
     {
-        public TerrariaClient(LogLevel logLevel = LogLevel.Info)
+        public AClient(LogLevel logLevel = LogLevel.Info)
         {
             _logLevel = logLevel;
 
@@ -19,35 +18,21 @@ namespace TerrariaBot
             _didSpawn = false;
             _cheats = false;
 
-            _client = null;
-            _ns = null;
             _listenThread = new Thread(new ThreadStart(Listen));
         }
 
-        ~TerrariaClient()
-        {
-            _ns.Close();
-            _client.Close();
-        }
+        internal abstract byte[] ReadMessage(out NetworkRequest messageType);
+        internal abstract BinaryWriter SendMessage(ushort length, NetworkRequest type);
 
         public event Action<PlayerSelf> ServerJoined;
 
-        /// <summary>
-        /// Connect the bot to the server
-        /// </summary>
-        /// <param name="ip">Server IP</param>
-        /// <param name="playerInfos">Information about player's appearance</param>
-        /// <param name="serverPassword">Server password if needed</param>
-        /// <param name="modifier">Stats modifiers. Cheats must be enabled if not null</param>
-        public virtual void Connect(string ip, PlayerInformation playerInfos, string serverPassword = "", PlayerStartModifier? modifier = null)
+        protected void InitPlayerInfos(PlayerInformation playerInfos, string serverPassword = "", PlayerStartModifier? modifier = null)
         {
             if (modifier != null)
                 CheatCheck();
             _playerInfos = playerInfos;
             _modifier = modifier;
             _password = serverPassword;
-            _client = new TcpClient(ip, 7777);
-            _ns = _client.GetStream();
             _listenThread.Start();
             SendStringMessage(NetworkRequest.Authentification, version);
         }
@@ -65,26 +50,16 @@ namespace TerrariaBot
         {
             while (Thread.CurrentThread.IsAlive)
             {
-                byte[] buf = new byte[2]; // contains length (uint16)
-                _ns.Read(buf, 0, buf.Length);
-                // Length contains the length of the length (2 octets), the type (1 octet) and the payload
-                // We remove 3 to only keep the length of the payload
-                int length = BitConverter.ToUInt16(buf) - 3;
-                buf = new byte[1]; // contains type (uint8)
-                _ns.Read(buf, 0, buf.Length);
-                byte type = buf[0];
-                switch ((NetworkRequest)type)
+                NetworkRequest type;
+                byte[] payload = ReadMessage(out type);
+                switch (type)
                 {
                     case NetworkRequest.FatalError: // Any fatal error that occured lead here
-                        buf = new byte[buf.Length];
-                        _ns.Read(buf, 0, buf.Length);
-                        throw new System.Exception("Fatal error: " + Encoding.Default.GetString(buf)); // TODO: Doesn't work
+                        throw new System.Exception("Fatal error: " + Encoding.Default.GetString(payload)); // TODO: Doesn't work
 
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
                         {
-                            buf = new byte[1];
-                            _ns.Read(buf, 0, buf.Length);
-                            byte slot = buf[0];
+                            byte slot = payload[0];
                             _me = new PlayerSelf(this, slot);
                             LogDebug("Player slot is now " + slot);
                             SendPlayerInfoMessage();
@@ -102,9 +77,7 @@ namespace TerrariaBot
 
                     case NetworkRequest.CharacterCreation:
                         {
-                            buf = new byte[length];
-                            _ns.Read(buf, 0, length);
-                            byte slot = buf[0];
+                            byte slot = payload[0];
                             if (!_otherPlayers.ContainsKey(slot))
                             {
                                 LogInfo("New player with slot " + slot);
@@ -114,16 +87,14 @@ namespace TerrariaBot
                         break;
 
                     case NetworkRequest.WorldInfoAnswer: // Various basic information about the world
-                        buf = new byte[length];
-                        _ns.Read(buf, 0, buf.Length);
                         if (!_didSpawn)
                         {
                             _didSpawn = true;
-                            int time = BitConverter.ToInt32(new[] { buf[0], buf[1], buf[2], buf[3] });
-                            byte moonInfo = buf[4];
-                            byte moonPhase = buf[5];
-                            short maxTilesX = BitConverter.ToInt16(new[] { buf[6], buf[7] });
-                            short maxTilesY = BitConverter.ToInt16(new[] { buf[8], buf[9] });
+                            int time = BitConverter.ToInt32(new[] { payload[0], payload[1], payload[2], payload[3] });
+                            byte moonInfo = payload[4];
+                            byte moonPhase = payload[5];
+                            short maxTilesX = BitConverter.ToInt16(new[] { payload[6], payload[7] });
+                            short maxTilesY = BitConverter.ToInt16(new[] { payload[8], payload[9] });
                             LogDebug("Current time is " + time);
                             LogDebug(ByteToBool(moonInfo, 1) ? "It's currently day time" : "It's currently night time");
                             LogDebug(ByteToBool(moonInfo, 2) ? "It's currently the blood moon" : "It's not currently the blood moon");
@@ -151,11 +122,9 @@ namespace TerrariaBot
                         break;
 
                     case NetworkRequest.TileRowData: // Some information about a row of tile?
-                        buf = new byte[length];
-                        _ns.Read(buf, 0, buf.Length);
-                        short width = BitConverter.ToInt16(new[] { buf[0], buf[1] });
-                        int tileX = BitConverter.ToInt32(new[] { buf[2], buf[3], buf[4], buf[5] });
-                        int tileY = BitConverter.ToInt32(new[] { buf[6], buf[7], buf[8], buf[9] });
+                        short width = BitConverter.ToInt16(new[] { payload[0], payload[1] });
+                        int tileX = BitConverter.ToInt32(new[] { payload[2], payload[3], payload[4], payload[5] });
+                        int tileY = BitConverter.ToInt32(new[] { payload[6], payload[7], payload[8], payload[9] });
                         LogDebug("Updating " + width + " tiles beginning at (" + tileX + ";" + tileY + ")");
                         break;
 
@@ -176,16 +145,9 @@ namespace TerrariaBot
                     case NetworkRequest.InventoryItemInfo:
                     case NetworkRequest.NinetySix:
                     case NetworkRequest.TowerShieldStrength:
-                        buf = new byte[length];
-                        _ns.Read(buf, 0, buf.Length);
                         break;
 
                     default:
-                        if (length > 0)
-                        {
-                            buf = new byte[length];
-                            _ns.Read(buf, 0, buf.Length);
-                        }
                         LogDebug("Unknown message type " + type);
                         break;
                 }
@@ -334,19 +296,9 @@ namespace TerrariaBot
 
         private void SendStringMessage(NetworkRequest type, string payload)
         {
-            if (_client == null)
-                throw new NullReferenceException("You must call Connect() before doing bot requests");
             var writer = SendMessage((ushort)(payload.Length + 1), type);
             writer.Write(payload);
             writer.Flush();
-        }
-
-        internal BinaryWriter SendMessage(ushort length, NetworkRequest type)
-        {
-            BinaryWriter writer = new BinaryWriter(_ns);
-            writer.Write((ushort)(length + 3));
-            writer.Write((byte)type);
-            return writer;
         }
         #endregion ServerRequestFunctions
 
@@ -360,8 +312,6 @@ namespace TerrariaBot
         private bool _didSpawn; // Did the player already spawned
         private bool _cheats; // Are cheats enabled
 
-        private TcpClient _client;
-        private NetworkStream _ns;
         private Thread _listenThread;
 
         private const string version = "Terraria194";

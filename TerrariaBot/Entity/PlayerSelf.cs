@@ -1,8 +1,10 @@
-﻿namespace TerrariaBot.Entity
+﻿using TerrariaBot.Client;
+
+namespace TerrariaBot.Entity
 {
     public class PlayerSelf : Player
     {
-        public PlayerSelf(TerrariaClient client, byte slot) : base(client, slot)
+        public PlayerSelf(AClient client, byte slot) : base(client, slot)
         { }
 
         public void TogglePVP(bool status)
