@@ -30,9 +30,19 @@ namespace TerrariaBot
 
         public event Action<PlayerSelf> ServerJoined;
 
-        public void Connect(string ip, PlayerInformation playerInfos, string serverPassword = "")
+        /// <summary>
+        /// Connect the bot to the server
+        /// </summary>
+        /// <param name="ip">Server IP</param>
+        /// <param name="playerInfos">Information about player's appearance</param>
+        /// <param name="serverPassword">Server password if needed</param>
+        /// <param name="modifier">Stats modifiers. Cheats must be enabled if not null</param>
+        public void Connect(string ip, PlayerInformation playerInfos, string serverPassword = "", PlayerStartModifier? modifier = null)
         {
+            if (modifier != null)
+                CheatCheck();
             _playerInfos = playerInfos;
+            _modifier = modifier;
             _password = serverPassword;
             _client = new TcpClient(ip, 7777);
             _ns = _client.GetStream();
@@ -76,6 +86,13 @@ namespace TerrariaBot
                         LogDebug("Player slot is now " + slot);
                         SendPlayerInfoMessage();
                         // We don't send our health/mana/etc because we keep the default one
+                        if (_modifier != null)
+                        {
+                            if (_modifier.Value.healthModifier.HasValue)
+                                SendPlayerHealth(_modifier.Value.healthModifier.Value);
+                            if (_modifier.Value.manaModifier.HasValue)
+                                SendPlayerMana(_modifier.Value.manaModifier.Value);
+                        }
                         SendWorldInfoRequest();
                         break;
 
@@ -202,23 +219,23 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        private void SendPlayerHealth()
+        private void SendPlayerHealth(short health)
         {
             ushort length = 5;
             var writer = SendMessage(length, NetworkRequest.CharacterHealth);
             writer.Write(_me.GetSlot());
-            writer.Write((short)100);
-            writer.Write((short)100);
+            writer.Write(health);
+            writer.Write(health);
             writer.Flush();
         }
 
-        private void SendPlayerMana()
+        private void SendPlayerMana(short mana)
         {
             ushort length = 5;
             var writer = SendMessage(length, NetworkRequest.CharacterMana);
             writer.Write(_me.GetSlot());
-            writer.Write((short)20);
-            writer.Write((short)20);
+            writer.Write(mana);
+            writer.Write(mana);
             writer.Flush();
         }
 
@@ -309,6 +326,7 @@ namespace TerrariaBot
 
         private PlayerSelf _me;
         private PlayerInformation _playerInfos; // All basic information about the player appearance
+        private PlayerStartModifier? _modifier;
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
         private bool _cheats; // Are cheats enabled
