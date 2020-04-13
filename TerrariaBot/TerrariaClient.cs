@@ -17,9 +17,6 @@ namespace TerrariaBot
             _didSpawn = false;
             _cheats = false;
 
-            _spawnX = 0;
-            _spawnY = 0;
-
             _client = null;
             _ns = null;
             _listenThread = new Thread(new ThreadStart(Listen));
@@ -97,20 +94,18 @@ namespace TerrariaBot
                             byte moonPhase = buf[5];
                             short maxTilesX = BitConverter.ToInt16(new[] { buf[6], buf[7] });
                             short maxTilesY = BitConverter.ToInt16(new[] { buf[8], buf[9] });
-                            _spawnX = BitConverter.ToInt16(new[] { buf[10], buf[11] });
-                            _spawnY = BitConverter.ToInt16(new[] { buf[12], buf[13] });
                             LogDebug("Current time is " + time);
                             LogDebug(ByteToBool(moonInfo, 1) ? "It's currently day time" : "It's currently night time");
                             LogDebug(ByteToBool(moonInfo, 2) ? "It's currently the blood moon" : "It's not currently the blood moon");
                             LogDebug(ByteToBool(moonInfo, 4) ? "It's currently an eclipse" : "It's not currently an eclipse");
                             LogDebug("The current moon phrase is " + moonPhase);
                             LogDebug("Maximum world value at (" + maxTilesX + ";" + maxTilesY + ")");
-                            SendInitialTile(_spawnX, _spawnY);
+                            SendInitialTile();
                         }
                         break;
 
                     case NetworkRequest.SpawnRequest: // When this is received, need to reply with spawn location
-                        LogInfo("Sending spawn request at (" + _spawnX + ";" + _spawnY + ")");
+                        LogInfo("Sending spawn request at (" + -1 + ";" + -1 + ")");
                         SendSpawnRequest();
                         ServerJoined.Invoke(_me);
                         break;
@@ -253,13 +248,13 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        private void SendInitialTile(int spawnX, int spawnY)
+        private void SendInitialTile()
         {
             ushort length = 9;
             var writer = SendMessage(length, NetworkRequest.InitialTileRequest);
             writer.Write(_me.GetSlot());
-            writer.Write(spawnX);
-            writer.Write(spawnY);
+            writer.Write(-1);
+            writer.Write(-1);
             writer.Flush();
         }
 
@@ -268,8 +263,8 @@ namespace TerrariaBot
             ushort length = 9;
             var writer = SendMessage(length, NetworkRequest.SpawnAnswer);
             writer.Write(_me.GetSlot());
-            writer.Write(_spawnX);
-            writer.Write(_spawnY);
+            writer.Write(-1);
+            writer.Write(-1);
             writer.Flush();
         }
 
@@ -321,8 +316,6 @@ namespace TerrariaBot
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
         private bool _cheats; // Are cheats enabled
-
-        private int _spawnX, _spawnY; // Spawn position
 
         private TcpClient _client;
         private NetworkStream _ns;
