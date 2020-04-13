@@ -3,6 +3,7 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using TerrariaBot.Entity;
 
 namespace TerrariaBot
 {
@@ -12,7 +13,7 @@ namespace TerrariaBot
         {
             _logLevel = logLevel;
 
-            _slot = 0;
+            _me = null;
             _didSpawn = false;
             _cheats = false;
 
@@ -30,7 +31,7 @@ namespace TerrariaBot
             _client.Close();
         }
 
-        public event Action ServerJoined;
+        public event Action<PlayerSelf> ServerJoined;
 
         public void Connect(string ip, PlayerInformation playerInfos, string serverPassword = "")
         {
@@ -40,24 +41,6 @@ namespace TerrariaBot
             _ns = _client.GetStream();
             _listenThread.Start();
             SendStringMessage(NetworkRequest.Authentification, version);
-        }
-
-        public void TogglePVP(bool status)
-        {
-            ushort length = 2;
-            var writer = SendMessage(length, NetworkRequest.TogglePVP);
-            writer.Write(_slot);
-            writer.Write((byte)(status ? 1 : 0));
-            writer.Flush();
-        }
-
-        public void JoinTeam(Team teamId)
-        {
-            ushort length = 2;
-            var writer = SendMessage(length, NetworkRequest.JoinTeam);
-            writer.Write(_slot);
-            writer.Write((byte)teamId);
-            writer.Flush();
         }
 
         public void ToogleCheats(bool value)
@@ -91,8 +74,9 @@ namespace TerrariaBot
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
                         buf = new byte[1];
                         _ns.Read(buf, 0, buf.Length);
-                        _slot = buf[0];
-                        LogDebug("Player slot is now " + _slot);
+                        byte slot = buf[0];
+                        _me = new PlayerSelf(this, slot);
+                        LogDebug("Player slot is now " + slot);
                         SendPlayerInfoMessage();
                         SendPlayerHealth();
                         SendPlayerMana();
@@ -131,7 +115,7 @@ namespace TerrariaBot
                     case NetworkRequest.SpawnRequest: // When this is received, need to reply with spawn location
                         LogInfo("Sending spawn request at (" + _spawnX + ";" + _spawnY + ")");
                         SendSpawnRequest();
-                        ServerJoined.Invoke();
+                        ServerJoined.Invoke(_me);
                         break;
 
                     case NetworkRequest.PasswordRequest: // The server need a password to be joined
@@ -234,7 +218,7 @@ namespace TerrariaBot
         {
             ushort length = 5;
             var writer = SendMessage(length, NetworkRequest.CharacterHealth);
-            writer.Write(_slot);
+            writer.Write(_me.GetSlot());
             writer.Write((short)100);
             writer.Write((short)100);
             writer.Flush();
@@ -244,7 +228,7 @@ namespace TerrariaBot
         {
             ushort length = 5;
             var writer = SendMessage(length, NetworkRequest.CharacterMana);
-            writer.Write(_slot);
+            writer.Write(_me.GetSlot());
             writer.Write((short)20);
             writer.Write((short)20);
             writer.Flush();
@@ -254,7 +238,7 @@ namespace TerrariaBot
         {
             ushort length = 11;
             var writer = SendMessage(length, NetworkRequest.CharacterBuff);
-            writer.Write(_slot);
+            writer.Write(_me.GetSlot());
             for (int i = 0; i < 10; i++)
                 writer.Write((byte)0);
             writer.Flush();
@@ -264,7 +248,7 @@ namespace TerrariaBot
         {
             ushort length = 7;
             var writer = SendMessage(length, NetworkRequest.CharacterMana);
-            writer.Write(_slot);
+            writer.Write(_me.GetSlot());
             writer.Write(inventorySlot);
             writer.Write((short)0);
             writer.Write((byte)0);
@@ -276,7 +260,7 @@ namespace TerrariaBot
         {
             ushort length = 9;
             var writer = SendMessage(length, NetworkRequest.InitialTileRequest);
-            writer.Write(_slot);
+            writer.Write(_me.GetSlot());
             writer.Write(spawnX);
             writer.Write(spawnY);
             writer.Flush();
@@ -286,7 +270,7 @@ namespace TerrariaBot
         {
             ushort length = 9;
             var writer = SendMessage(length, NetworkRequest.SpawnAnswer);
-            writer.Write(_slot);
+            writer.Write(_me.GetSlot());
             writer.Write(_spawnX);
             writer.Write(_spawnY);
             writer.Flush();
@@ -296,7 +280,7 @@ namespace TerrariaBot
         {
             ushort length = (ushort)(29 + _playerInfos.name.Length + 1);
             var writer = SendMessage(length, NetworkRequest.CharacterCreation);
-            writer.Write(_slot);
+            writer.Write(_me.GetSlot());
             writer.Write((byte)1); // Unknown
             writer.Write(_playerInfos.hairVariant); // Hair variant
             writer.Write(_playerInfos.name); // Name
@@ -324,7 +308,7 @@ namespace TerrariaBot
             writer.Flush();
         }
 
-        private BinaryWriter SendMessage(ushort length, NetworkRequest type)
+        internal BinaryWriter SendMessage(ushort length, NetworkRequest type)
         {
             BinaryWriter writer = new BinaryWriter(_ns);
             writer.Write((ushort)(length + 3));
@@ -335,7 +319,7 @@ namespace TerrariaBot
 
         private readonly LogLevel _logLevel;
 
-        private byte _slot; // Player id
+        private PlayerSelf _me;
         private PlayerInformation _playerInfos; // All basic information about the player appearance
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
