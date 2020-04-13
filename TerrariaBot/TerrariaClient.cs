@@ -98,16 +98,13 @@ namespace TerrariaBot
                             short maxTilesX = BitConverter.ToInt16(new[] { buf[6], buf[7] });
                             short maxTilesY = BitConverter.ToInt16(new[] { buf[8], buf[9] });
                             _spawnX = BitConverter.ToInt16(new[] { buf[10], buf[11] });
-                            _spawnY = BitConverter.ToInt16(new[] { buf[12], buf[23] });
+                            _spawnY = BitConverter.ToInt16(new[] { buf[12], buf[13] });
                             LogDebug("Current time is " + time);
                             LogDebug(ByteToBool(moonInfo, 1) ? "It's currently day time" : "It's currently night time");
                             LogDebug(ByteToBool(moonInfo, 2) ? "It's currently the blood moon" : "It's not currently the blood moon");
                             LogDebug(ByteToBool(moonInfo, 4) ? "It's currently an eclipse" : "It's not currently an eclipse");
                             LogDebug("The current moon phrase is " + moonPhase);
                             LogDebug("Maximum world value at (" + maxTilesX + ";" + maxTilesY + ")");
-                            LogDebug("Spawn position at (" + _spawnX + ";" + _spawnY + ")");
-                            if (_spawnX >= maxTilesX || _spawnY >= maxTilesY)
-                                LogWarning("It appears that the spawn location is at an odd value. This may means that the bot will spawn out of bounds.");
                             SendInitialTile(_spawnX, _spawnY);
                         }
                         break;
