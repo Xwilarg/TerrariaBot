@@ -107,6 +107,7 @@ namespace TerrariaBot
                             byte slot = buf[0];
                             if (!_otherPlayers.ContainsKey(slot))
                             {
+                                LogInfo("New player with slot " + slot);
                                 _otherPlayers.Add(slot, new Player(this, slot));
                             }
                         }
