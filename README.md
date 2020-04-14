@@ -46,3 +46,6 @@ private static void Ai()
 ## Projects using this library
 Meina is a bot that have for goal to be able to play at Terraria<br/>
  - [GitHub Page](https://github.com/Xwilarg/Meina)
+
+## So how does it works?
+If you want to understand better how Terraria client communicate you can check this repository: https://github.com/TheIndra55/terraria-research
