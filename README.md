@@ -37,9 +37,9 @@ static void Main(string[] _)
     autoEvent.WaitOne(); // We just wait indefinitly
 }
 
-private static void Ai()
+private static void Ai(PlayerSelf me)
 {
-    // Just do what you want here, you probably want to interract with your IPClient to do stuffs
+    // Just do what you want here, you probably want to interract with your PlayerSelf to do stuffs
 }
 ```
 
