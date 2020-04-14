@@ -1,6 +1,5 @@
 ﻿using Steamworks;
 using System;
-using System.IO;
 using TerrariaBot.Client;
 
 namespace TerrariaBot.Steam.Client

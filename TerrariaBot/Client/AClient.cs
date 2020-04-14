@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using TerrariaBot.Entity;
 
@@ -58,16 +57,16 @@ namespace TerrariaBot.Client
                 if (message.Length == 0)
                     continue;
                 type = (NetworkRequest)message[0];
-                byte[] payload;
-                payload = message.Skip(1).ToArray();
+                var payload = new MemoryStream(message.Skip(1).ToArray());
+                BinaryReader reader = new BinaryReader(payload);
                 switch (type)
                 {
                     case NetworkRequest.FatalError: // Any fatal error that occured lead here
-                        throw new System.Exception("Fatal error: " + Encoding.Default.GetString(payload)); // TODO: Doesn't work
+                        throw new System.Exception("Fatal error: " + reader.ReadString());
 
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
                         {
-                            byte slot = payload[0];
+                            byte slot = reader.ReadByte();
                             _me = new PlayerSelf(this, slot);
                             LogDebug("Player slot is now " + slot);
                             SendPlayerInfoMessage();
@@ -85,7 +84,7 @@ namespace TerrariaBot.Client
 
                     case NetworkRequest.CharacterCreation:
                         {
-                            byte slot = payload[0];
+                            byte slot = reader.ReadByte();
                             if (!_otherPlayers.ContainsKey(slot))
                             {
                                 LogInfo("New player with slot " + slot);
@@ -98,11 +97,11 @@ namespace TerrariaBot.Client
                         if (!_didSpawn)
                         {
                             _didSpawn = true;
-                            int time = BitConverter.ToInt32(new[] { payload[0], payload[1], payload[2], payload[3] });
-                            byte moonInfo = payload[4];
-                            byte moonPhase = payload[5];
-                            short maxTilesX = BitConverter.ToInt16(new[] { payload[6], payload[7] });
-                            short maxTilesY = BitConverter.ToInt16(new[] { payload[8], payload[9] });
+                            int time = reader.ReadInt32();
+                            byte moonInfo = reader.ReadByte();
+                            byte moonPhase = reader.ReadByte();
+                            short maxTilesX = reader.ReadInt16();
+                            short maxTilesY = reader.ReadInt16();
                             LogDebug("Current time is " + time);
                             LogDebug(ByteToBool(moonInfo, 1) ? "It's currently day time" : "It's currently night time");
                             LogDebug(ByteToBool(moonInfo, 2) ? "It's currently the blood moon" : "It's not currently the blood moon");
@@ -130,9 +129,9 @@ namespace TerrariaBot.Client
                         break;
 
                     case NetworkRequest.TileRowData: // Some information about a row of tile?
-                        short width = BitConverter.ToInt16(new[] { payload[0], payload[1] });
-                        int tileX = BitConverter.ToInt32(new[] { payload[2], payload[3], payload[4], payload[5] });
-                        int tileY = BitConverter.ToInt32(new[] { payload[6], payload[7], payload[8], payload[9] });
+                        short width = reader.ReadInt16();
+                        int tileX = reader.ReadInt32();
+                        int tileY = reader.ReadInt32();
                         LogDebug("Updating " + width + " tiles beginning at (" + tileX + ";" + tileY + ")");
                         break;
 
