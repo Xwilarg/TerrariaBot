@@ -16,7 +16,7 @@ namespace TerrariaBot.Steam.Client
             Steamworks.SteamClient.Shutdown();
         }
 
-        public void ConnectWithSteamId(ulong friendSteamId, PlayerInformation playerInfos, string serverPassword = "", PlayerStartModifier? modifier = null)
+        public void ConnectWithSteamId(ulong friendSteamId, PlayerInformation playerInfos, string serverPassword = "")
         {
             Steamworks.SteamClient.Init(terrariaSteamId);
             _friendSteamId = new SteamId() { Value = friendSteamId };
@@ -28,7 +28,7 @@ namespace TerrariaBot.Steam.Client
                     SteamNetworking.AcceptP2PSessionWithUser(steamid);
                 }
             };
-            InitPlayerInfos(playerInfos, serverPassword, modifier);
+            InitPlayerInfos(playerInfos, serverPassword);
         }
 
         protected override byte[] ReadMessage()

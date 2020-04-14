@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Net.Sockets;
 
 namespace TerrariaBot.Client
@@ -15,11 +14,11 @@ namespace TerrariaBot.Client
             _client.Close();
         }
 
-        public void ConnectWithIP(string ip, PlayerInformation playerInfos, string serverPassword = "", PlayerStartModifier? modifier = null)
+        public void ConnectWithIP(string ip, PlayerInformation playerInfos, string serverPassword = "")
         {
             _client = new TcpClient(ip, 7777);
             _ns = _client.GetStream();
-            InitPlayerInfos(playerInfos, serverPassword, modifier);
+            InitPlayerInfos(playerInfos, serverPassword);
         }
 
         protected override byte[] ReadMessage()

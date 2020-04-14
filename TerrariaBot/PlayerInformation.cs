@@ -1,8 +1,10 @@
 ﻿using System;
+using System.IO;
+using TerrariaBot.Client;
 
 namespace TerrariaBot
 {
-    public struct PlayerInformation
+    public class PlayerInformation
     {
         public PlayerInformation(string name, byte hairVariant, Color hairColor, Color skinColor,
             Color eyesColor, Color shirtColor, Color underShirtColor, Color pantsColor,
@@ -12,16 +14,18 @@ namespace TerrariaBot
                 throw new ArgumentNullException("Name cannot be null.");
             if (name.Length > 20)
                 throw new ArgumentException("Name length must be inferior or equal to 20 characters.");
-            this.name = name;
-            this.hairVariant = hairVariant;
-            this.hairColor = hairColor;
-            this.skinColor = skinColor;
-            this.eyesColor = eyesColor;
-            this.shirtColor = shirtColor;
-            this.underShirtColor = underShirtColor;
-            this.pantsColor = pantsColor;
-            this.shoesColor = shoesColor;
-            this.difficulty = difficulty;
+            _name = name;
+            _hairVariant = hairVariant;
+            _hairColor = hairColor;
+            _skinColor = skinColor;
+            _eyesColor = eyesColor;
+            _shirtColor = shirtColor;
+            _underShirtColor = underShirtColor;
+            _pantsColor = pantsColor;
+            _shoesColor = shoesColor;
+            _difficulty = difficulty;
+            _health = 100;
+            _mana = 20;
         }
 
         public static PlayerInformation GetRandomPlayer(string name, PlayerDifficulty difficulty)
@@ -35,15 +39,48 @@ namespace TerrariaBot
             return new Color((byte)r.Next(0, 255), (byte)r.Next(0, 255), (byte)r.Next(0, 255));
         }
 
-        public string name;
-        public byte hairVariant;
-        public Color hairColor;
-        public Color skinColor;
-        public Color eyesColor;
-        public Color shirtColor;
-        public Color underShirtColor;
-        public Color pantsColor;
-        public Color shoesColor;
-        public PlayerDifficulty difficulty;
+        internal void Write(BinaryWriter writer)
+        {
+            writer.Write((byte)1); // Unknown
+            writer.Write(_hairVariant);
+            writer.Write(_name);
+            writer.Write((byte)1); // Unknown
+            writer.Write((byte)1); // Unknown
+            writer.Write((byte)1); // Unknown
+            writer.Write((byte)1); // Unknown
+            writer.WriteColor(_hairColor);
+            writer.WriteColor(_skinColor);
+            writer.WriteColor(_eyesColor);
+            writer.WriteColor(_shirtColor);
+            writer.WriteColor(_underShirtColor);
+            writer.WriteColor(_pantsColor);
+            writer.WriteColor(_shoesColor);
+            writer.Write((byte)_difficulty);
+        }
+
+        public void SetHealth(short value)
+        {
+            AClient.CheatCheck();
+            _health = value;
+        }
+
+        public void SetMana(short value)
+        {
+            AClient.CheatCheck();
+            _mana = value;
+        }
+
+        private string _name; internal int GetNameLength() => _name.Length;
+        private byte _hairVariant;
+        private Color _hairColor;
+        private Color _skinColor;
+        private Color _eyesColor;
+        private Color _shirtColor;
+        private Color _underShirtColor;
+        private Color _pantsColor;
+        private Color _shoesColor;
+        private PlayerDifficulty _difficulty;
+        private short _health; internal short GetHealth() => _health;
+        private short _mana; internal short GetMana() => _mana;
     }
 }

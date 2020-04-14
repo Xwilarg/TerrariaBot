@@ -28,12 +28,9 @@ namespace TerrariaBot.Client
 
         public event Action<PlayerSelf> ServerJoined;
 
-        protected void InitPlayerInfos(PlayerInformation playerInfos, string serverPassword = "", PlayerStartModifier? modifier = null)
+        protected void InitPlayerInfos(PlayerInformation playerInfos, string serverPassword = "")
         {
-            if (modifier != null)
-                CheatCheck();
             _playerInfos = playerInfos;
-            _modifier = modifier;
             _password = serverPassword;
             _listenThread.Start();
             SendStringMessage(NetworkRequest.Authentification, version);
@@ -71,13 +68,10 @@ namespace TerrariaBot.Client
                             LogDebug("Player slot is now " + slot);
                             SendPlayerInfoMessage();
                             // We don't send our health/mana/etc because we keep the default one
-                            if (_modifier != null)
-                            {
-                                if (_modifier.Value.healthModifier.HasValue)
-                                    SendPlayerHealth(_modifier.Value.healthModifier.Value);
-                                if (_modifier.Value.manaModifier.HasValue)
-                                    SendPlayerMana(_modifier.Value.manaModifier.Value);
-                            }
+                            if (_playerInfos.GetHealth() != 100)
+                                SendPlayerHealth(_playerInfos.GetHealth());
+                            if (_playerInfos.GetMana() != 20)
+                                SendPlayerMana(_playerInfos.GetMana());
                             SendWorldInfoRequest();
                         }
                         break;
@@ -164,7 +158,7 @@ namespace TerrariaBot.Client
         private bool ByteToBool(byte b, int offset)
             => (b & offset) != 0;
 
-        private void CheatCheck()
+        internal static void CheatCheck()
         {
             if (!_cheats)
                 throw new Exception.CheatNotEnabled();
@@ -280,24 +274,10 @@ namespace TerrariaBot.Client
 
         private void SendPlayerInfoMessage()
         {
-            ushort length = (ushort)(29 + _playerInfos.name.Length + 1);
+            ushort length = (ushort)(29 + _playerInfos.GetNameLength() + 1);
             var writer = WriteHeader(length, NetworkRequest.CharacterCreation);
             writer.Write(_me.GetSlot());
-            writer.Write((byte)1); // Unknown
-            writer.Write(_playerInfos.hairVariant); // Hair variant
-            writer.Write(_playerInfos.name); // Name
-            writer.Write((byte)1); // Unknown
-            writer.Write((byte)1); // Unknown
-            writer.Write((byte)1); // Unknown
-            writer.Write((byte)1); // Unknown
-            writer.WriteColor(_playerInfos.hairColor); // Hair color
-            writer.WriteColor(_playerInfos.skinColor); // Skin color
-            writer.WriteColor(_playerInfos.eyesColor); // Eyes color
-            writer.WriteColor(_playerInfos.shirtColor); // Shirt color
-            writer.WriteColor(_playerInfos.underShirtColor); // Under shirt color
-            writer.WriteColor(_playerInfos.pantsColor); // Pants color
-            writer.WriteColor(_playerInfos.shoesColor); // Shoes color
-            writer.Write((byte)_playerInfos.difficulty); // Difficulty
+            _playerInfos.Write(writer);
             SendWrittenBytes();
         }
 
@@ -327,10 +307,9 @@ namespace TerrariaBot.Client
         private PlayerSelf _me;
         Dictionary<byte, Player> _otherPlayers;
         private PlayerInformation _playerInfos; // All basic information about the player appearance
-        private PlayerStartModifier? _modifier;
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
-        private bool _cheats; // Are cheats enabled
+        private static bool _cheats; // Are cheats enabled
 
         private MemoryStream _ms;
 
