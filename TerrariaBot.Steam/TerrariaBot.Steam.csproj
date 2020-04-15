@@ -6,11 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Facepunch.Steamworks" Version="2.3.3" />
+    <ProjectReference Include="..\TerrariaBot\TerrariaBot.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TerrariaBot\TerrariaBot.csproj" />
+    <Reference Include="Steamworks.NET">
+      <HintPath>Steamworks.NET.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
