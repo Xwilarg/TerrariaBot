@@ -106,6 +106,13 @@ namespace TerrariaBot.Client
                         }
                         break;
 
+                    case NetworkRequest.TileRowData: // Some information about a row of tile?
+                        short width = reader.ReadInt16();
+                        int tileX = reader.ReadInt32();
+                        int tileY = reader.ReadInt32();
+                        LogDebug("Updating " + width + " tiles beginning at (" + tileX + ";" + tileY + ")");
+                        break;
+
                     case NetworkRequest.SpawnRequest: // When this is received, need to reply with spawn location
                         LogInfo("Sending spawn request at (" + -1 + ";" + -1 + ")");
                         SendSpawnRequest();
@@ -120,13 +127,6 @@ namespace TerrariaBot.Client
                             LogDebug("Sending password to server");
                             SendStringMessage(NetworkRequest.PasswordAnswer, _password);
                         }
-                        break;
-
-                    case NetworkRequest.TileRowData: // Some information about a row of tile?
-                        short width = reader.ReadInt16();
-                        int tileX = reader.ReadInt32();
-                        int tileY = reader.ReadInt32();
-                        LogDebug("Updating " + width + " tiles beginning at (" + tileX + ";" + tileY + ")");
                         break;
 
                     case NetworkRequest.CharacterInventorySlot:
