@@ -13,12 +13,15 @@ The project is already on [NuGet](https://www.nuget.org/packages/TerrariaBot/0.3
 ```
 Install-Package TerrariaBot -Version 0.3.0-alpha
 ```
+
+## Connect to another player using Steam (coming soon)
 If you want to connect your bot using Steam you'll need TerrariaBot.Steam<br/>
 Please make not that using it will use your Steam account and increase your hours played on Steam
 ```
-Coming soon
+Nuget package coming soon
 ```
-You'll also need to have steam_api64.dll next to your executable
+The next step will be to add a dependency to [Steamworks.NET](https://github.com/rlabrecque/Steamworks.NET/releases)<br/>
+Then you'll need do add steam_api64.dll and Steamworks.NET.dll next to your executable
 
 ## Example
 ```cs
