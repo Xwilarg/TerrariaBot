@@ -158,7 +158,7 @@ namespace TerrariaBot.Client
                                 byte slot = reader.ReadByte();
                                 byte mode = reader.ReadByte();
                                 string content = reader.ReadString();
-                                LogError("Message received by player " + slot + " with id " + id + " and mode " + mode + ": " + content);
+                                LogInfo("Message received from player " + slot + " with id " + id + " and mode " + mode + ": " + content);
                             }
                             catch (EndOfStreamException) // TODO: Need to fix this
                             { }
