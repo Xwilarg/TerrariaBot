@@ -27,6 +27,8 @@ namespace TerrariaBot.Client
             _ns.Read(buf, 0, 2);
             // Length contains the length of the length (2 octets)
             int length = BitConverter.ToUInt16(buf) - 2;
+            if (length <= 0)
+                return new byte[0];
             buf = new byte[length];
             _ns.Read(buf, 0, length);
             return buf;

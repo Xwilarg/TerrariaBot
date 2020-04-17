@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-
-namespace TerrariaBot.Client
+﻿namespace TerrariaBot.Client
 {
     internal enum NetworkRequest
     {
@@ -16,6 +14,7 @@ namespace TerrariaBot.Client
         TileRowData = 10,
         RecalculateUV = 11,
         SpawnAnswer = 12,
+        PlayerControls = 13,
         CharacterHealth = 16,
         BlockUpdate = 20,
         ItemInfo = 21,
@@ -32,7 +31,7 @@ namespace TerrariaBot.Client
         CharacterBuff = 50,
         EvilRatio = 57,
         DailyAnglerQuestFinished = 74,
-        EightyTwo = 82,
+        ChatMessage = 82,
         EightyThree = 83,
         CharacterStealth = 84,
         InventoryItemInfo = 89,

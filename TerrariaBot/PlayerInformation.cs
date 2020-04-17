@@ -48,13 +48,13 @@ namespace TerrariaBot
             writer.Write((byte)1); // Unknown
             writer.Write((byte)1); // Unknown
             writer.Write((byte)1); // Unknown
-            writer.WriteColor(_hairColor);
-            writer.WriteColor(_skinColor);
-            writer.WriteColor(_eyesColor);
-            writer.WriteColor(_shirtColor);
-            writer.WriteColor(_underShirtColor);
-            writer.WriteColor(_pantsColor);
-            writer.WriteColor(_shoesColor);
+            writer.Write(_hairColor);
+            writer.Write(_skinColor);
+            writer.Write(_eyesColor);
+            writer.Write(_shirtColor);
+            writer.Write(_underShirtColor);
+            writer.Write(_pantsColor);
+            writer.Write(_shoesColor);
             writer.Write((byte)_difficulty);
         }
 
@@ -70,7 +70,7 @@ namespace TerrariaBot
             _mana = value;
         }
 
-        private string _name; internal int GetNameLength() => _name.Length;
+        private string _name; internal string GetName() => _name; internal int GetNameLength() => _name.Length;
         private byte _hairVariant;
         private Color _hairColor;
         private Color _skinColor;

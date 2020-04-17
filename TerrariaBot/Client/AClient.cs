@@ -17,6 +17,7 @@ namespace TerrariaBot.Client
             _otherPlayers = new Dictionary<byte, Player>();
             _didSpawn = false;
             _cheats = false;
+            _name = null;
 
             _ms = null;
 
@@ -30,6 +31,7 @@ namespace TerrariaBot.Client
 
         protected void InitPlayerInfos(PlayerInformation playerInfos, string serverPassword = "")
         {
+            _name = playerInfos.GetName();
             _playerInfos = playerInfos;
             _password = serverPassword;
             _listenThread.Start();
@@ -59,6 +61,7 @@ namespace TerrariaBot.Client
                 switch (type)
                 {
                     case NetworkRequest.FatalError: // Any fatal error that occured lead here
+                        reader.ReadByte();
                         throw new System.Exception("Fatal error: " + reader.ReadString());
 
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
@@ -113,6 +116,24 @@ namespace TerrariaBot.Client
                         LogDebug("Updating " + width + " tiles beginning at (" + tileX + ";" + tileY + ")");
                         break;
 
+                    case NetworkRequest.PlayerControls:
+                        {
+                            byte slot = reader.ReadByte();
+                            byte movement = reader.ReadByte();
+                            byte otherMovement = reader.ReadByte();
+                            byte selectedItem = reader.ReadByte();
+                            float posX = reader.ReadSingle();
+                            float posY = reader.ReadSingle();
+                            if (ByteToBool(otherMovement, 4))
+                            {
+                                float velX = reader.ReadSingle();
+                                float velY = reader.ReadSingle();
+                                LogDebug("Player " + slot + " is at (" + posX + ";" + posY + ") with a velocity of (" + velX + ";" + velY + ")");
+                            }
+                            LogDebug("Player " + slot + " is at (" + posX + ";" + posY + ")");
+                        }
+                        break;
+
                     case NetworkRequest.SpawnRequest: // When this is received, need to reply with spawn location
                         LogInfo("Sending spawn request at (" + -1 + ";" + -1 + ")");
                         SendSpawnRequest();
@@ -129,6 +150,21 @@ namespace TerrariaBot.Client
                         }
                         break;
 
+                    case NetworkRequest.ChatMessage:
+                        {
+                            try
+                            {
+                                ushort id =  reader.ReadUInt16();
+                                byte slot = reader.ReadByte();
+                                byte mode = reader.ReadByte();
+                                string content = reader.ReadString();
+                                LogError("Message received by player " + slot + " with id " + id + " and mode " + mode + ": " + content);
+                            }
+                            catch (EndOfStreamException) // TODO: Need to fix this
+                            { }
+                        }
+                        break;
+
                     case NetworkRequest.CharacterInventorySlot:
                     case NetworkRequest.Status:
                     case NetworkRequest.RecalculateUV:
@@ -140,7 +176,6 @@ namespace TerrariaBot.Client
                     case NetworkRequest.DeleteProjectile:
                     case NetworkRequest.EvilRatio:
                     case NetworkRequest.DailyAnglerQuestFinished:
-                    case NetworkRequest.EightyTwo:
                     case NetworkRequest.EightyThree:
                     case NetworkRequest.CharacterStealth:
                     case NetworkRequest.InventoryItemInfo:
@@ -149,7 +184,7 @@ namespace TerrariaBot.Client
                         break;
 
                     default:
-                        LogDebug("Unknown message type " + type);
+                        // LogDebug("Unknown message type " + type);
                         break;
                 }
             }
@@ -179,7 +214,9 @@ namespace TerrariaBot.Client
         protected void LogInfo<T>(T message)
         {
             if (_logLevel <= LogLevel.Info)
+            {
                 Console.WriteLine(message);
+            }
         }
 
         protected void LogWarning<T>(T message)
@@ -310,6 +347,7 @@ namespace TerrariaBot.Client
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
         private static bool _cheats; // Are cheats enabled
+        private string _name; internal string GetName() => _name;
 
         private MemoryStream _ms;
 
