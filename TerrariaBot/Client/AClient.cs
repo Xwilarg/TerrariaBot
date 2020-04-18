@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using TerrariaBot.Entity;
 
@@ -20,6 +22,8 @@ namespace TerrariaBot.Client
             _name = null;
 
             _ms = null;
+
+            _englishLines = File.Exists("Resources/englishLines.json") ? JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText("Resources/englishLines.json")) : null;
 
             _listenThread = new Thread(new ThreadStart(Listen));
         }
@@ -158,7 +162,7 @@ namespace TerrariaBot.Client
                                 byte slot = reader.ReadByte();
                                 byte mode = reader.ReadByte();
                                 string content = reader.ReadString();
-                                LogInfo("Message received from player " + slot + " with id " + id + " and mode " + mode + ": " + content);
+                                LogInfo("Message received from player " + slot + " with id " + id + " and mode " + mode + ": " + GetEnglishLine(content));
                             }
                             catch (EndOfStreamException) // TODO: Need to fix this
                             { }
@@ -188,6 +192,20 @@ namespace TerrariaBot.Client
                         break;
                 }
             }
+        }
+
+        private string GetEnglishLine(string line)
+        {
+            if (_englishLines == null || !line.Contains("."))
+                return line;
+            string[] content = line.Split('.');
+            if (_englishLines.ContainsKey(content[0]))
+            {
+                var type = _englishLines[content[0]];
+                if (type.ContainsKey(content[1]))
+                    return type[content[1]];
+            }
+            return line;
         }
 
         private bool ByteToBool(byte b, int offset)
@@ -352,6 +370,8 @@ namespace TerrariaBot.Client
         private MemoryStream _ms;
 
         private Thread _listenThread;
+
+        private readonly Dictionary<string, Dictionary<string, string>> _englishLines;
 
         private const string version = "Terraria194";
     }

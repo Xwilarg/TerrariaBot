@@ -4,7 +4,7 @@
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.3.0-alpha</Version>
+    <Version>0.4.0-alpha</Version>
     <Authors>Xwilarg</Authors>
     <Company />
     <Product />
@@ -13,14 +13,24 @@
     <PackageProjectUrl>https://github.com/Xwilarg/TerrariaBot</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Xwilarg/TerrariaBot</RepositoryUrl>
     <PackageTags>terraria terraria-bot bot-library</PackageTags>
-    <AssemblyVersion>0.3.0.0</AssemblyVersion>
-    <FileVersion>0.3.0.0</FileVersion>
+    <AssemblyVersion>0.4.0.0</AssemblyVersion>
+    <FileVersion>0.4.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
     <None Include="..\LICENSE">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
+    </None>
+    <None Include="Resources\englishLines.json">
+      <Pack>true</Pack>
+      <PackagePath>build</PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Resources\englishLines.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 
