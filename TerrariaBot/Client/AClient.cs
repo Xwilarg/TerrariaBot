@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading;
 using TerrariaBot.Entity;
 
@@ -11,10 +10,8 @@ namespace TerrariaBot.Client
 {
     public abstract class AClient
     {
-        public AClient(LogLevel logLevel = LogLevel.Info)
+        public AClient()
         {
-            _logLevel = logLevel;
-
             _me = null;
             _otherPlayers = new Dictionary<byte, Player>();
             _didSpawn = false;
@@ -31,7 +28,17 @@ namespace TerrariaBot.Client
         protected abstract byte[] ReadMessage();
         protected abstract void SendMessage(byte[] message);
 
+        /// <summary>
+        /// Called when the bot has joined the server
+        /// The current player is given in parameter
+        /// </summary>
         public event Action<PlayerSelf> ServerJoined;
+
+        /// <summary>
+        /// Log message of something happening inside the library
+        /// The log level and message are given in parameter
+        /// </summary>
+        public event Action<LogLevel, string> Log;
 
         protected void InitPlayerInfos(PlayerInformation playerInfos, string serverPassword = "")
         {
@@ -42,6 +49,10 @@ namespace TerrariaBot.Client
             SendStringMessage(NetworkRequest.Authentification, version);
         }
 
+        /// <summary>
+        /// Toggle cheats, allow to call functions that would do things normally impossible for a human player
+        /// </summary>
+        /// <param name="value">True to enable cheats, false to disable them</param>
         public void ToogleCheats(bool value)
         {
             _cheats = value;
@@ -220,40 +231,22 @@ namespace TerrariaBot.Client
         #region LogFunctions
         protected void LogDebug<T>(T message)
         {
-            if (_logLevel == LogLevel.Debug)
-            {
-                var color = Console.ForegroundColor;
-                Console.ForegroundColor = ConsoleColor.DarkGray;
-                Console.WriteLine(message);
-                Console.ForegroundColor = color;
-            }
+            Log(LogLevel.Debug, message.ToString());
         }
 
         protected void LogInfo<T>(T message)
         {
-            if (_logLevel <= LogLevel.Info)
-            {
-                Console.WriteLine(message);
-            }
+            Log(LogLevel.Info, message.ToString());
         }
 
         protected void LogWarning<T>(T message)
         {
-            var color = Console.ForegroundColor;
-            if (_logLevel <= LogLevel.Warning)
-            {
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine(message);
-                Console.ForegroundColor = color;
-            }
+            Log(LogLevel.Warning, message.ToString());
         }
 
         protected void LogError<T>(T message)
         {
-            var color = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(message);
-            Console.ForegroundColor = color;
+            Log(LogLevel.Error, message.ToString());
         }
         #endregion LogFunctions
 
@@ -356,8 +349,6 @@ namespace TerrariaBot.Client
 
         internal void SendWrittenBytes() => SendMessage(_ms.ToArray());
         #endregion ServerRequestFunctions
-
-        private readonly LogLevel _logLevel;
 
         private PlayerSelf _me;
         Dictionary<byte, Player> _otherPlayers;

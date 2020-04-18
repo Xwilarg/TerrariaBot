@@ -5,7 +5,7 @@ namespace TerrariaBot.Client
 {
     public sealed class IPClient : AClient
     {
-        public IPClient(LogLevel logLevel) : base(logLevel)
+        public IPClient() : base()
         { }
 
         ~IPClient()

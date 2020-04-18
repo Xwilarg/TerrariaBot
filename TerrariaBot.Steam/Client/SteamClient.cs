@@ -7,7 +7,7 @@ namespace TerrariaBot.Steam.Client
 {
     public class SteamClient : AClient
     {
-        public SteamClient(LogLevel logLevel) : base(logLevel)
+        public SteamClient() : base()
         {
             if (!File.Exists("steam_appid.txt"))
                 File.WriteAllText("steam_appid.txt", terrariaSteamId.ToString());

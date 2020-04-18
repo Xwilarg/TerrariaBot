@@ -7,6 +7,9 @@ namespace TerrariaBot.Entity
         public PlayerSelf(AClient client, byte slot) : base(client, slot)
         { }
 
+        /// <summary>
+        /// Enable or disable PvP
+        /// </summary>
         public void TogglePVP(bool status)
         {
             ushort length = 2;
@@ -16,6 +19,9 @@ namespace TerrariaBot.Entity
             _client.SendWrittenBytes();
         }
 
+        /// <summary>
+        /// Join or leave a team
+        /// </summary>
         public void JoinTeam(Team teamId)
         {
             ushort length = 2;
@@ -24,6 +30,10 @@ namespace TerrariaBot.Entity
             writer.Write((byte)teamId);
             _client.SendWrittenBytes();
         }
+
+        /// <summary>
+        /// Send a message using the in-game chat
+        /// </summary>
         public void SendChatMessage(string message)
         {
             ushort length = (ushort)(2 + _client.GetName().Length + message.Length + 2);
