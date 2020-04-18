@@ -26,7 +26,7 @@ namespace TerrariaBot.Entity
         }
         public void SendChatMessage(string message)
         {
-            ushort length = 0;
+            ushort length = (ushort)(2 + _client.GetName().Length + message.Length + 2);
             var writer = _client.WriteHeader(length, NetworkRequest.ChatMessage);
             writer.Write((ushort)1);
             writer.Write(_client.GetName());
