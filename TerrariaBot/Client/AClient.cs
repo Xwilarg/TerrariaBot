@@ -174,10 +174,12 @@ namespace TerrariaBot.Client
                         }
                         break;
 
-                    case NetworkRequest.SpawnRequest: // When this is received, need to reply with spawn location
-                        LogInfo("Sending spawn request at (" + -1 + ";" + -1 + ")");
-                        SendSpawnRequest();
-                        ServerJoined?.Invoke(_me);
+                    case NetworkRequest.TogglePVP:
+                        {
+                            byte slot = reader.ReadByte();
+                            bool isPVP = reader.ReadByte() == 1;
+                            PVPStatusChanged?.Invoke(_otherPlayers[slot], isPVP);
+                        }
                         break;
 
                     case NetworkRequest.PasswordRequest: // The server need a password to be joined
@@ -188,6 +190,20 @@ namespace TerrariaBot.Client
                             LogDebug("Sending password to server");
                             SendStringMessage(NetworkRequest.PasswordAnswer, _password);
                         }
+                        break;
+
+                    case NetworkRequest.JoinTeam:
+                        {
+                            byte slot = reader.ReadByte();
+                            byte team = reader.ReadByte();
+                            TeamStatusChanged?.Invoke(_otherPlayers[slot], (Team)team);
+                        }
+                        break;
+
+                    case NetworkRequest.SpawnRequest: // When this is received, need to reply with spawn location
+                        LogInfo("Sending spawn request at (" + -1 + ";" + -1 + ")");
+                        SendSpawnRequest();
+                        ServerJoined?.Invoke(_me);
                         break;
 
                     case NetworkRequest.ChatMessage:
@@ -202,15 +218,16 @@ namespace TerrariaBot.Client
                                 {
                                     ChatMessageReceived?.Invoke(_otherPlayers[slot], content);
                                 }
-                                else if (mode == 2 && _otherPlayers.ContainsKey(slot) && _messageInfos.ContainsKey(content))
+                                else if (mode == 2 && slot == 255)
                                 {
-                                    _messageInfos[content](this, _otherPlayers[slot]);
+                                    LogDebug("Message received from server with id " + id + " and mode " + mode + ": " + content);
                                 }
-                                LogInfo("Message received from player " + slot + " with id " + id + " and mode " + mode + ": " + content);
+                                else
+                                    LogWarning("Unknown message received from player " + slot + " with id " + id + " and mode " + mode + ": " + content);
                             }
                             catch (EndOfStreamException) // TODO: Need to fix this
                             {
-                                LogWarning("Message received from player " + slot + " with id " + id + " and mode " + mode);
+                                LogWarning("Unknown message received from player " + slot + " with id " + id + " and mode " + mode);
                             }
                         }
                         break;
@@ -277,6 +294,26 @@ namespace TerrariaBot.Client
             ushort length = 0;
             WriteHeader(length, NetworkRequest.WorldInfoRequest);
             SendWrittenBytes();
+        }
+
+        internal void JoinTeam(Player p, Team teamId)
+        {
+            ushort length = 2;
+            var writer = WriteHeader(length, NetworkRequest.JoinTeam);
+            writer.Write(p.GetSlot());
+            writer.Write((byte)teamId);
+            SendWrittenBytes();
+            TeamStatusChanged?.Invoke(p, teamId);
+        }
+
+        internal void TogglePVP(Player p, bool status)
+        {
+            ushort length = 2;
+            var writer = WriteHeader(length, NetworkRequest.TogglePVP);
+            writer.Write(p.GetSlot());
+            writer.Write((byte)(status ? 1 : 0));
+            SendWrittenBytes();
+            PVPStatusChanged?.Invoke(p, status);
         }
 
         private void SendPlayerHealth(short health)
@@ -384,17 +421,5 @@ namespace TerrariaBot.Client
         private Thread _listenThread;
 
         private const string version = "Terraria194";
-
-        private readonly Dictionary<string, Action<AClient, Player>> _messageInfos = new Dictionary<string, Action<AClient, Player>>()
-        {
-            { "LegacyMultiplayer.11", (AClient client, Player p) => { client.PVPStatusChanged?.Invoke(p, true); } },
-            { "LegacyMultiplayer.12", (AClient client, Player p) => { client.PVPStatusChanged?.Invoke(p, false); } },
-            { "LegacyMultiplayer.13", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.None); } },
-            { "LegacyMultiplayer.14", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Red); } },
-            { "LegacyMultiplayer.15", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Green); } },
-            { "LegacyMultiplayer.16", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Blue); } },
-            { "LegacyMultiplayer.17", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Yellow); } },
-            { "LegacyMultiplayer.22", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Pink); } }
-        };
     }
 }
