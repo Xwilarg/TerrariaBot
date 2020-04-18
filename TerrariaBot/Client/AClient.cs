@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.Json;
 using System.Threading;
 using TerrariaBot.Entity;
 
@@ -20,8 +19,6 @@ namespace TerrariaBot.Client
 
             _ms = null;
 
-            _englishLines = File.Exists("Resources/englishLines.json") ? JsonSerializer.Deserialize<Dictionary<string, Dictionary<string, string>>>(File.ReadAllText("Resources/englishLines.json")) : null;
-
             _listenThread = new Thread(new ThreadStart(Listen));
         }
 
@@ -35,10 +32,35 @@ namespace TerrariaBot.Client
         public event Action<PlayerSelf> ServerJoined;
 
         /// <summary>
+        /// Called when a new player join the server
+        /// Also called for each player that are already in the server when you join
+        /// The player is given in parameter
+        /// </summary>
+        public event Action<Player> NewPlayerJoined;
+
+        /// <summary>
         /// Log message of something happening inside the library
         /// The log level and message are given in parameter
         /// </summary>
         public event Action<LogLevel, string> Log;
+
+        /// <summary>
+        /// Called when a chat message is sent
+        /// Contains the player that sent it along with the message
+        /// </summary>
+        public event Action<Player, string> ChatMessageReceived;
+
+        /// <summary>
+        /// Called when someone changed his PVP status
+        /// Contains the player that changed it along with his new status
+        /// </summary>
+        public event Action<Player, bool> PVPStatusChanged;
+
+        /// <summary>
+        /// Called when someone changed his team
+        /// Contains the player that changed it along with his new team
+        /// </summary>
+        public event Action<Player, Team> TeamStatusChanged;
 
         protected void InitPlayerInfos(PlayerInformation playerInfos, string serverPassword = "")
         {
@@ -83,6 +105,7 @@ namespace TerrariaBot.Client
                         {
                             byte slot = reader.ReadByte();
                             _me = new PlayerSelf(this, slot);
+                            _otherPlayers.Add(slot, _me);
                             LogDebug("Player slot is now " + slot);
                             SendPlayerInfoMessage();
                             // We don't send our health/mana/etc because we keep the default one
@@ -100,7 +123,9 @@ namespace TerrariaBot.Client
                             if (!_otherPlayers.ContainsKey(slot))
                             {
                                 LogInfo("New player with slot " + slot);
-                                _otherPlayers.Add(slot, new Player(this, slot));
+                                Player player = new Player(this, slot);
+                                _otherPlayers.Add(slot, player);
+                                NewPlayerJoined?.Invoke(player);
                             }
                         }
                         break;
@@ -152,7 +177,7 @@ namespace TerrariaBot.Client
                     case NetworkRequest.SpawnRequest: // When this is received, need to reply with spawn location
                         LogInfo("Sending spawn request at (" + -1 + ";" + -1 + ")");
                         SendSpawnRequest();
-                        ServerJoined.Invoke(_me);
+                        ServerJoined?.Invoke(_me);
                         break;
 
                     case NetworkRequest.PasswordRequest: // The server need a password to be joined
@@ -167,16 +192,26 @@ namespace TerrariaBot.Client
 
                     case NetworkRequest.ChatMessage:
                         {
+                            ushort id = reader.ReadUInt16();
+                            byte slot = reader.ReadByte();
+                            byte mode = reader.ReadByte();
                             try
                             {
-                                ushort id =  reader.ReadUInt16();
-                                byte slot = reader.ReadByte();
-                                byte mode = reader.ReadByte();
                                 string content = reader.ReadString();
-                                LogInfo("Message received from player " + slot + " with id " + id + " and mode " + mode + ": " + GetEnglishLine(content));
+                                if (mode == 0 && _otherPlayers.ContainsKey(slot))
+                                {
+                                    ChatMessageReceived?.Invoke(_otherPlayers[slot], content);
+                                }
+                                else if (mode == 2 && _otherPlayers.ContainsKey(slot) && _messageInfos.ContainsKey(content))
+                                {
+                                    _messageInfos[content](this, _otherPlayers[slot]);
+                                }
+                                LogInfo("Message received from player " + slot + " with id " + id + " and mode " + mode + ": " + content);
                             }
                             catch (EndOfStreamException) // TODO: Need to fix this
-                            { }
+                            {
+                                LogWarning("Message received from player " + slot + " with id " + id + " and mode " + mode);
+                            }
                         }
                         break;
 
@@ -205,20 +240,6 @@ namespace TerrariaBot.Client
             }
         }
 
-        private string GetEnglishLine(string line)
-        {
-            if (_englishLines == null || !line.Contains("."))
-                return line;
-            string[] content = line.Split('.');
-            if (_englishLines.ContainsKey(content[0]))
-            {
-                var type = _englishLines[content[0]];
-                if (type.ContainsKey(content[1]))
-                    return type[content[1]];
-            }
-            return line;
-        }
-
         private bool ByteToBool(byte b, int offset)
             => (b & offset) != 0;
 
@@ -231,22 +252,22 @@ namespace TerrariaBot.Client
         #region LogFunctions
         protected void LogDebug<T>(T message)
         {
-            Log(LogLevel.Debug, message.ToString());
+            Log?.Invoke(LogLevel.Debug, message.ToString());
         }
 
         protected void LogInfo<T>(T message)
         {
-            Log(LogLevel.Info, message.ToString());
+            Log?.Invoke(LogLevel.Info, message.ToString());
         }
 
         protected void LogWarning<T>(T message)
         {
-            Log(LogLevel.Warning, message.ToString());
+            Log?.Invoke(LogLevel.Warning, message.ToString());
         }
 
         protected void LogError<T>(T message)
         {
-            Log(LogLevel.Error, message.ToString());
+            Log?.Invoke(LogLevel.Error, message.ToString());
         }
         #endregion LogFunctions
 
@@ -362,8 +383,18 @@ namespace TerrariaBot.Client
 
         private Thread _listenThread;
 
-        private readonly Dictionary<string, Dictionary<string, string>> _englishLines;
-
         private const string version = "Terraria194";
+
+        private readonly Dictionary<string, Action<AClient, Player>> _messageInfos = new Dictionary<string, Action<AClient, Player>>()
+        {
+            { "LegacyMultiplayer.11", (AClient client, Player p) => { client.PVPStatusChanged?.Invoke(p, true); } },
+            { "LegacyMultiplayer.12", (AClient client, Player p) => { client.PVPStatusChanged?.Invoke(p, false); } },
+            { "LegacyMultiplayer.13", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.None); } },
+            { "LegacyMultiplayer.14", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Red); } },
+            { "LegacyMultiplayer.15", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Green); } },
+            { "LegacyMultiplayer.16", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Blue); } },
+            { "LegacyMultiplayer.17", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Yellow); } },
+            { "LegacyMultiplayer.22", (AClient client, Player p) => { client.TeamStatusChanged?.Invoke(p, Team.Pink); } }
+        };
     }
 }

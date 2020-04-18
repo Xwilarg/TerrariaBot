@@ -6,6 +6,7 @@
         Red,
         Green,
         Blue,
-        Yellow
+        Yellow,
+        Pink
     }
 }
