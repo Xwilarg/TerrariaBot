@@ -1,18 +1,35 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>netcoreapp3.1</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>1.0.0-alpha</Version>
+    <Authors>Xwilarg</Authors>
+    <Company />
+    <Product />
+    <Description>A way to connect using Steam for TerrariaBot</Description>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/Xwilarg/TerrariaBot</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Xwilarg/TerrariaBot</RepositoryUrl>
+    <PackageTags>terraria terraria-bot bot-library</PackageTags>
   </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\TerrariaBot\TerrariaBot.csproj" />
-  </ItemGroup>
 
   <ItemGroup>
     <Reference Include="Steamworks.NET">
       <HintPath>Steamworks.NET.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\TerrariaBot\TerrariaBot.csproj" />
   </ItemGroup>
 
 </Project>

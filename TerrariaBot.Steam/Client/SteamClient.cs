@@ -2,6 +2,7 @@
 using TerrariaBot.Client;
 using Steamworks;
 using System;
+using System.Linq;
 
 namespace TerrariaBot.Steam.Client
 {
@@ -12,9 +13,7 @@ namespace TerrariaBot.Steam.Client
             if (!File.Exists("steam_appid.txt"))
                 File.WriteAllText("steam_appid.txt", terrariaSteamId.ToString());
             _friendSteamId = null;
-            _sessionRequest = Callback<P2PSessionRequest_t>.Create(OnP2PSessionRequest);
             _sessionConnectFail = Callback<P2PSessionConnectFail_t>.Create(OnP2PSessionConnectFail);
-            _socketStatusCallback = Callback<SocketStatusCallback_t>.Create(OnSocketStatusCallback);
             if (SteamAPI.RestartAppIfNecessary(new AppId_t(terrariaSteamId)))
                 throw new System.Exception("RestartAppIfNecessary returned false");
             if (!SteamAPI.Init())
@@ -33,7 +32,27 @@ namespace TerrariaBot.Steam.Client
         public void ConnectWithSteamId(ulong friendSteamId, PlayerInformation playerInfos, string serverPassword = "")
         {
             _friendSteamId = new CSteamID(friendSteamId);
+            SteamNetworking.AllowP2PPacketRelay(true);
+            SendAuthTicket();
+            P2PSessionState_t state;
+            while (SteamNetworking.GetP2PSessionState(_friendSteamId.Value, out state) && state.m_bConnectionActive != 1)
+            { }
             InitPlayerInfos(playerInfos, serverPassword);
+        }
+
+        private void SendAuthTicket()
+        {
+            byte[] auth = new byte[1021];
+            uint dataLength;
+            SteamUser.GetAuthSessionTicket(auth, auth.Length, out dataLength);
+            uint finalLength = dataLength + 3U;
+            byte[] request = new byte[finalLength];
+            request[0] = (byte)(finalLength & 255);
+            request[1] = (byte)(finalLength >> 8 & 255);
+            request[2] = 93;
+            for (int i = 0; i < dataLength; i++)
+                request[i + 3] = auth[i];
+            SteamNetworking.SendP2PPacket(_friendSteamId.Value, request, finalLength, EP2PSend.k_EP2PSendReliable, writeChannel);
         }
 
         protected override byte[] ReadMessage()
@@ -47,11 +66,10 @@ namespace TerrariaBot.Steam.Client
             {
                 if (steamId == _friendSteamId)
                 {
-                    LogDebug("Packet size: " + size);
-                    return buffer;
+                    byte[] finalBuffer = new byte[size - 2];
+                    Array.Copy(buffer.Skip(2).ToArray(), finalBuffer, size - 2);
+                    return finalBuffer;
                 }
-                else
-                    LogDebug("Ignoring packet from " + steamId);
             }
             return new byte[0];
         }
@@ -65,23 +83,9 @@ namespace TerrariaBot.Steam.Client
                  LogError("Error while sending P2P packet");
         }
 
-
-        void OnP2PSessionRequest(P2PSessionRequest_t session)
-        {
-            LogDebug("Received session request from " + session.m_steamIDRemote);
-
-            if (!SteamNetworking.AcceptP2PSessionWithUser(session.m_steamIDRemote))
-                LogError("Failed to accept P2P session with " + session.m_steamIDRemote);
-        }
-
         void OnP2PSessionConnectFail(P2PSessionConnectFail_t error)
         {
             LogError("P2P session failed: " + error.m_eP2PSessionError);
-        }
-
-        void OnSocketStatusCallback(SocketStatusCallback_t status)
-        {
-            LogDebug("Session status update: " + status.m_eSNetSocketState);
         }
 
         private CSteamID? _friendSteamId;
