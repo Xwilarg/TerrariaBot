@@ -160,6 +160,14 @@ namespace TerrariaBot.Client
                         {
                             byte slot = reader.ReadByte();
                             byte movement = reader.ReadByte();
+                            bool up = ByteToBool(movement, 1);
+                            bool down = ByteToBool(movement, 2);
+                            bool left = ByteToBool(movement, 4);
+                            bool right = ByteToBool(movement, 8);
+                            bool jump = ByteToBool(movement, 16);
+                            bool useItem = ByteToBool(movement, 32);
+                            bool direction = ByteToBool(movement, 64);
+                            string keyInfo = "Key pressed: " + (up ? "Up " : "") + (down ? "Down " : "") + (left + "Left " + "") + (right + "Right " + "") + (jump + "Jump " + "");
                             byte otherMovement = reader.ReadByte();
                             byte selectedItem = reader.ReadByte();
                             float posX = reader.ReadSingle();
@@ -168,9 +176,9 @@ namespace TerrariaBot.Client
                             {
                                 float velX = reader.ReadSingle();
                                 float velY = reader.ReadSingle();
-                                LogDebug("Player " + slot + " is at (" + posX + ";" + posY + ") with a velocity of (" + velX + ";" + velY + ")");
+                                LogDebug("Player " + slot + " is at (" + posX + ";" + posY + ") with a velocity of (" + velX + ";" + velY + ") " + keyInfo);
                             }
-                            LogDebug("Player " + slot + " is at (" + posX + ";" + posY + ")");
+                            LogDebug("Player " + slot + " is at (" + posX + ";" + posY + ") " + keyInfo);
                         }
                         break;
 
@@ -206,11 +214,12 @@ namespace TerrariaBot.Client
                                 {
                                     _messageInfos[content](this, _otherPlayers[slot]);
                                 }
-                                LogInfo("Message received from player " + slot + " with id " + id + " and mode " + mode + ": " + content);
+                                else
+                                    LogDebug("Message received from player " + slot + " with id " + id + " and mode " + mode + ": " + content);
                             }
                             catch (EndOfStreamException) // TODO: Need to fix this
                             {
-                                LogWarning("Message received from player " + slot + " with id " + id + " and mode " + mode);
+                                LogDebug("Message received from player " + slot + " with id " + id + " and mode " + mode);
                             }
                         }
                         break;
