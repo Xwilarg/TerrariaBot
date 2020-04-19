@@ -167,7 +167,7 @@ namespace TerrariaBot.Client
                             bool jump = ByteToBool(movement, 16);
                             bool useItem = ByteToBool(movement, 32);
                             bool direction = ByteToBool(movement, 64);
-                            string keyInfo = "Key pressed: " + (up ? "Up " : "") + (down ? "Down " : "") + (left + "Left " + "") + (right + "Right " + "") + (jump + "Jump " + "");
+                            string keyInfo = "Key pressed: " + (up ? "Up " : "") + (down ? ", Down " : "") + (left + ", Left " + "") + (right + ", Right " + "") + (jump + ", Jump " + "");
                             byte otherMovement = reader.ReadByte();
                             byte selectedItem = reader.ReadByte();
                             float posX = reader.ReadSingle();
@@ -301,6 +301,21 @@ namespace TerrariaBot.Client
         {
             ushort length = 0;
             WriteHeader(length, NetworkRequest.WorldInfoRequest);
+            SendWrittenBytes();
+        }
+
+        internal void SendPlayerControls(Player p, byte actions)
+        {
+            ushort length = 20;
+            var writter = WriteHeader(length, NetworkRequest.PlayerControls);
+            writter.Write(p.GetSlot());
+            writter.Write(actions);
+            writter.Write((byte)0);
+            writter.Write((byte)0);
+            writter.Write(0f);
+            writter.Write(0f);
+            writter.Write(0f);
+            writter.Write(0f);
             SendWrittenBytes();
         }
 

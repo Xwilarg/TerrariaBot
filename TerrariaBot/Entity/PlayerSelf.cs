@@ -1,4 +1,5 @@
-﻿using TerrariaBot.Client;
+﻿using System.Linq;
+using TerrariaBot.Client;
 
 namespace TerrariaBot.Entity
 {
@@ -6,6 +7,11 @@ namespace TerrariaBot.Entity
     {
         public PlayerSelf(AClient client, byte slot) : base(client, slot)
         { }
+
+        public void DoAction(params PlayerAction[] actions)
+        {
+            _client.SendPlayerControls(this, (byte)actions.Sum(x => (int)x));
+        }
 
         /// <summary>
         /// Join or leave a team
