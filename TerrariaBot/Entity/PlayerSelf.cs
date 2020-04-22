@@ -6,7 +6,7 @@ namespace TerrariaBot.Entity
 {
     public class PlayerSelf : Player
     {
-        public PlayerSelf(AClient client, byte slot) : base(client, slot)
+        public PlayerSelf(AClient client, string name, byte slot) : base(client, name, slot)
         { }
 
         private void DoAction(params PlayerAction[] actions) // Doesn't work yet

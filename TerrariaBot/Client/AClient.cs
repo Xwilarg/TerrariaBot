@@ -4,7 +4,6 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Threading;
 using TerrariaBot.Entity;
 
@@ -17,7 +16,6 @@ namespace TerrariaBot.Client
             _me = null;
             _otherPlayers = new Dictionary<byte, Player>();
             _didSpawn = false;
-            _cheats = false;
             _tiles = null;
             _tileFrameImportant = new bool[470];
             foreach (var frame in _importantFrames)
@@ -71,6 +69,27 @@ namespace TerrariaBot.Client
         /// </summary>
         public event Action<Player, Team> TeamStatusChanged;
 
+        /// <summary>
+        /// Called when a player change his position
+        /// Contains the player that moved along with his new position
+        /// </summary>
+        public event Action<Player, Vector2> PlayerPositionUpdate;
+
+        /// <summary>
+        /// Get the current player
+        /// </summary>
+        public PlayerSelf GetPlayerSelf() => _me;
+
+        /// <summary>
+        /// Get all the players (including the current player)
+        /// </summary>
+        public Player[] GetAllPlayers() => _otherPlayers.Values.ToArray();
+
+        /// <summary>
+        /// Get a player given it id
+        /// </summary>
+        public Player GetPlayer(byte id) => _otherPlayers[id];
+
         protected void InitPlayerInfos(PlayerInformation playerInfos, string serverPassword = "")
         {
             _name = playerInfos.GetName();
@@ -78,19 +97,6 @@ namespace TerrariaBot.Client
             _password = serverPassword;
             _listenThread.Start();
             SendStringMessage(NetworkRequest.Authentification, version);
-        }
-
-        /// <summary>
-        /// Toggle cheats, allow to call functions that would do things normally impossible for a human player
-        /// </summary>
-        /// <param name="value">True to enable cheats, false to disable them</param>
-        public void ToogleCheats(bool value)
-        {
-            _cheats = value;
-            if (_cheats)
-                LogWarning("Cheats were enabled.");
-            else
-                LogWarning("Cheats were disabled.");
         }
 
         private void Listen()
@@ -113,7 +119,7 @@ namespace TerrariaBot.Client
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
                         {
                             byte slot = reader.ReadByte();
-                            _me = new PlayerSelf(this, slot);
+                            _me = new PlayerSelf(this, _me.GetName(), slot);
                             _otherPlayers.Add(slot, _me);
                             LogDebug("Player slot is now " + slot);
                             SendPlayerInfoMessage();
@@ -129,10 +135,13 @@ namespace TerrariaBot.Client
                     case NetworkRequest.CharacterCreation:
                         {
                             byte slot = reader.ReadByte();
+                            reader.ReadByte();
+                            reader.ReadByte();
+                            string name = reader.ReadString();
                             if (!_otherPlayers.ContainsKey(slot))
                             {
                                 LogInfo("New player with slot " + slot);
-                                Player player = new Player(this, slot);
+                                Player player = new Player(this, name, slot);
                                 _otherPlayers.Add(slot, player);
                                 NewPlayerJoined?.Invoke(player);
                             }
@@ -320,7 +329,10 @@ namespace TerrariaBot.Client
                             byte selectedItem = reader.ReadByte();
                             float posX = reader.ReadSingle();
                             float posY = reader.ReadSingle();
-                            _otherPlayers[slot].SetPosition(new Vector2(posX, posY));
+                            var player = _otherPlayers[slot];
+                            var newPos = new Vector2(posX, posY);
+                            player.SetPosition(newPos);
+                            PlayerPositionUpdate?.Invoke(player, newPos);
                             if (ByteToBool(otherMovement, 4))
                             {
                                 float velX = reader.ReadSingle();
@@ -471,6 +483,7 @@ namespace TerrariaBot.Client
             writter.Write(0f);
             writter.Write(0f);
             SendWrittenBytes();
+            PlayerPositionUpdate?.Invoke(p, new Vector2(x, y));
         }
 
         internal void JoinTeam(Player p, Team teamId)
@@ -590,7 +603,6 @@ namespace TerrariaBot.Client
         private PlayerInformation _playerInfos; // All basic information about the player appearance
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
-        private static bool _cheats; // Are cheats enabled
         private Tile[,] _tiles;
         private bool[] _tileFrameImportant;
         private readonly int[] _importantFrames = new[]
