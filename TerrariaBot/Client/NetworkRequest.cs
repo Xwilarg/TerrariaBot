@@ -11,7 +11,7 @@
         WorldInfoAnswer = 7,
         InitialTileRequest = 8,
         Status = 9,
-        TileRowData = 10,
+        TileData = 10,
         RecalculateUV = 11,
         SpawnAnswer = 12,
         PlayerControls = 13,

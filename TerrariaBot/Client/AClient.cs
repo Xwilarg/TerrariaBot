@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using TerrariaBot.Entity;
@@ -15,6 +16,7 @@ namespace TerrariaBot.Client
             _otherPlayers = new Dictionary<byte, Player>();
             _didSpawn = false;
             _cheats = false;
+            _tiles = null;
             _name = null;
 
             _ms = null;
@@ -145,15 +147,47 @@ namespace TerrariaBot.Client
                             LogDebug(ByteToBool(moonInfo, 4) ? "It's currently an eclipse" : "It's not currently an eclipse");
                             LogDebug("The current moon phrase is " + moonPhase);
                             LogDebug("Maximum world value at (" + maxTilesX + ";" + maxTilesY + ")");
+                            _tiles = new Tile[maxTilesX, maxTilesY];
+                            for (int i = 0; i < maxTilesX; i++)
+                                for (int y = 0; y < maxTilesY; y++)
+                                    _tiles[i, y] = null;
                             SendInitialTile();
                         }
                         break;
 
-                    case NetworkRequest.TileRowData: // Some information about a row of tile?
-                        short width = reader.ReadInt16();
-                        int tileX = reader.ReadInt32();
-                        int tileY = reader.ReadInt32();
-                        LogDebug("Updating " + width + " tiles beginning at (" + tileX + ";" + tileY + ")");
+                    case NetworkRequest.TileData: // Some information about a row of tile?
+                        {
+                            MemoryStream stream = new MemoryStream();
+                            if (payload.ReadByte() != 0)
+                            {
+                                using (DeflateStream deflate = new DeflateStream(payload, CompressionMode.Decompress))
+                                {
+                                    deflate.CopyTo(stream);
+                                    deflate.Close();
+                                }
+                                stream.Position = 0L;
+                            }
+                            else
+                            {
+                                stream = payload;
+                                stream.Position = 1L;
+                            }
+                            using (BinaryReader r = new BinaryReader(stream))
+                            {
+                                int xStart = r.ReadInt32();
+                                int yStart = r.ReadInt32();
+                                int width = r.ReadInt16();
+                                int height = r.ReadInt16();
+                                LogDebug("Updating " + width + " x " + height + " tiles beginning at (" + xStart + ";" + yStart + ")");
+                                for (int y = yStart; y < yStart + height; y++)
+                                {
+                                    for (int x = xStart; x < xStart + width; x++)
+                                    {
+
+                                    }
+                                }
+                            }
+                        }
                         break;
 
                     case NetworkRequest.PlayerControls:
@@ -437,6 +471,7 @@ namespace TerrariaBot.Client
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
         private static bool _cheats; // Are cheats enabled
+        private Tile[,] _tiles;
         private string _name; internal string GetName() => _name;
 
         private MemoryStream _ms;
