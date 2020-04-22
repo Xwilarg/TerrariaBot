@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Numerics;
 using TerrariaBot.Client;
 
 namespace TerrariaBot.Entity
@@ -11,6 +12,22 @@ namespace TerrariaBot.Entity
         private void DoAction(params PlayerAction[] actions) // Doesn't work yet
         {
             _client.SendPlayerControls(this, (byte)actions.Sum(x => (int)x));
+        }
+
+        /// <summary>
+        /// Teleport to a location
+        /// </summary>
+        public void Teleport(float x, float y)
+        {
+            _client.SendTeleport(this, x, y);
+        }
+
+        /// <summary>
+        /// Teleport to a location
+        /// </summary>
+        public void Teleport(Vector2 pos)
+        {
+            _client.SendTeleport(this, pos.X, pos.Y);
         }
 
         /// <summary>

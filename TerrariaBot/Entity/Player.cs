@@ -1,4 +1,5 @@
-﻿using TerrariaBot.Client;
+﻿using System.Numerics;
+using TerrariaBot.Client;
 
 namespace TerrariaBot.Entity
 {
@@ -11,8 +12,10 @@ namespace TerrariaBot.Entity
         }
 
         public byte GetSlot() => _slot;
+        public Vector2 GetPosition() => _position; internal void SetPosition(Vector2 value) => _position = value;
 
         protected AClient _client;
         protected byte _slot;
+        private Vector2 _position;
     }
 }

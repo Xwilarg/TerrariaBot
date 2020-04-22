@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading;
 using TerrariaBot.Entity;
@@ -147,12 +148,20 @@ namespace TerrariaBot.Client
                             byte moonPhase = reader.ReadByte();
                             short maxTilesX = reader.ReadInt16();
                             short maxTilesY = reader.ReadInt16();
+                            short spawnX = reader.ReadInt16();
+                            short spawnY = reader.ReadInt16();
+                            short surfaceY = reader.ReadInt16();
+                            short rockY = reader.ReadInt16();
                             LogDebug("Current time is " + time);
                             LogDebug(ByteToBool(moonInfo, 1) ? "It's currently day time" : "It's currently night time");
                             LogDebug(ByteToBool(moonInfo, 2) ? "It's currently the blood moon" : "It's not currently the blood moon");
                             LogDebug(ByteToBool(moonInfo, 4) ? "It's currently an eclipse" : "It's not currently an eclipse");
                             LogDebug("The current moon phrase is " + moonPhase);
                             LogDebug("Maximum world value at (" + maxTilesX + ";" + maxTilesY + ")");
+                            LogDebug("Spawn world value at (" + spawnX + ";" + spawnY + ")");
+                            LogDebug("Surface layer is at heigth of " + surfaceY);
+                            LogDebug("Rock layer is at height of " + rockY);
+                            _me.SetPosition(new Vector2(spawnX, spawnY));
                             _tiles = new Tile[maxTilesX, maxTilesY];
                             for (int i = 0; i < maxTilesX; i++)
                                 for (int y = 0; y < maxTilesY; y++)
@@ -311,6 +320,7 @@ namespace TerrariaBot.Client
                             byte selectedItem = reader.ReadByte();
                             float posX = reader.ReadSingle();
                             float posY = reader.ReadSingle();
+                            _otherPlayers[slot].SetPosition(new Vector2(posX, posY));
                             if (ByteToBool(otherMovement, 4))
                             {
                                 float velX = reader.ReadSingle();
@@ -369,13 +379,9 @@ namespace TerrariaBot.Client
                                 {
                                     LogDebug("Message received from server with id " + id + " and mode " + mode + ": " + content);
                                 }
-                                else
-                                    LogWarning("Unknown message received from player " + slot + " with id " + id + " and mode " + mode + ": " + content);
                             }
                             catch (EndOfStreamException) // TODO: Need to fix this
-                            {
-                                LogWarning("Unknown message received from player " + slot + " with id " + id + " and mode " + mode);
-                            }
+                            { }
                         }
                         break;
 
@@ -406,12 +412,6 @@ namespace TerrariaBot.Client
 
         private bool ByteToBool(byte b, int offset)
             => (b & offset) != 0;
-
-        internal static void CheatCheck()
-        {
-            if (!_cheats)
-                throw new Exception.CheatNotEnabled();
-        }
 
         #region LogFunctions
         protected void LogDebug<T>(T message)
@@ -453,6 +453,21 @@ namespace TerrariaBot.Client
             writter.Write((byte)0);
             writter.Write(0f);
             writter.Write(0f);
+            writter.Write(0f);
+            writter.Write(0f);
+            SendWrittenBytes();
+        }
+
+        internal void SendTeleport(Player p, float x, float y)
+        {
+            ushort length = 20;
+            var writter = WriteHeader(length, NetworkRequest.PlayerControls);
+            writter.Write(p.GetSlot());
+            writter.Write((byte)0);
+            writter.Write((byte)0);
+            writter.Write((byte)0);
+            writter.Write(x);
+            writter.Write(y);
             writter.Write(0f);
             writter.Write(0f);
             SendWrittenBytes();

@@ -60,13 +60,11 @@ namespace TerrariaBot
 
         public void SetHealth(short value)
         {
-            AClient.CheatCheck();
             _health = value;
         }
 
         public void SetMana(short value)
         {
-            AClient.CheatCheck();
             _mana = value;
         }
 
