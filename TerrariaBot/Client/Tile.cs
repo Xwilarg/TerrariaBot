@@ -17,7 +17,7 @@
 
         public Tile(Tile t) // Copy ctor, we asume t isn't null
         {
-            _type = t._type; ;
+            _type = t._type;
             _wall = t._wall;
             _liquid = t._liquid;
             _sTileHeader = t._sTileHeader;
