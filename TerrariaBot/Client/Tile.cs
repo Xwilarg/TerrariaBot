@@ -1,6 +1,6 @@
 ﻿namespace TerrariaBot.Client
 {
-    public class Tile
+    internal class Tile
     {
         public Tile()
         {
@@ -53,7 +53,7 @@
 
         private ushort _type; public ushort GetTileType() => _type; public void SetTileType(ushort value) => _type = value;
         private byte _wall; public void SetWall(byte value) => _wall = value;
-        private byte _liquid; public void SetLiquid(byte value) => _liquid = value;
+        private byte _liquid; public byte GetLiquid() => _liquid; public void SetLiquid(byte value) => _liquid = value;
         private short _sTileHeader;
         private short _bTileHeader;
         private short _bTileHeader2;

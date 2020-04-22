@@ -92,39 +92,6 @@ namespace TerrariaBot.Client
                 LogWarning("Cheats were disabled.");
         }
 
-        public string[] DumpMap()
-        {
-            int xMax = _tiles.GetLength(0);
-            int yMax = _tiles.GetLength(1);
-            string[] map = new string[yMax];
-            for (int y = 0; y < yMax; y++)
-            {
-                StringBuilder str = new StringBuilder();
-                for (int x = 0; x < xMax; x++)
-                {
-                    var tile = _tiles[x, y];
-                    if (tile != null)
-                    {
-                        switch (tile.GetTileType())
-                        {
-                            case 0: str.Append(" "); break; // Empty / Unknown
-                            case 5: str.Append("|"); break; // Trees
-                            case 147: str.Append("D"); break; // Dirt (Corruption)
-                            case 189: str.Append("c"); break; // Cloud
-                            case 25: str.Append("R"); break; // Rock (Corruption)
-                            case 53: str.Append("s"); break; // Sand
-                            case 192: str.Append("e"); break; // Three leaves
-                            default: str.Append("?"); /*LogDebug(tile.GetTileType());*/ break;
-                        }
-                    }
-                    else
-                        str.Append(".");
-                }
-                map[y] = str.ToString();
-            }
-            return map;
-        }
-
         private void Listen()
         {
             while (Thread.CurrentThread.IsAlive)
@@ -258,14 +225,19 @@ namespace TerrariaBot.Client
                                                 {
                                                     b4 = r.ReadByte();
                                                     num2 = r.ReadByte();
-                                                    num2 = num2 << 8 | b4;
+                                                    num2 = (num2 << 8 | b4);
                                                 }
                                                 else
                                                 {
                                                     num2 = r.ReadByte();
                                                 }
                                                 tile.SetTileType((ushort)num2);
-                                                if (_tileFrameImportant[num2])
+                                                // num2 < _tileFrameImportant.Length shouldn't be here
+                                                if (num2 > _tileFrameImportant.Length)
+                                                {
+                                                    LogError(num2 + " is bigger than _tileFrameImportant length (" + _tileFrameImportant.Length + ")");
+                                                }
+                                                if (num2 < _tileFrameImportant.Length && _tileFrameImportant[num2])
                                                 {
                                                     tile.SetFrames(r.ReadInt16(), r.ReadInt16());
                                                 }
