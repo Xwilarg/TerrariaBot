@@ -17,6 +17,11 @@ namespace TerrariaBot.Client
             _didSpawn = false;
             _cheats = false;
             _tiles = null;
+            _tileFrameImportant = new bool[470];
+            foreach (var frame in _importantFrames)
+            {
+                _tileFrameImportant[frame] = true;
+            }
             _name = null;
 
             _ms = null;
@@ -179,11 +184,105 @@ namespace TerrariaBot.Client
                                 int width = r.ReadInt16();
                                 int height = r.ReadInt16();
                                 LogDebug("Updating " + width + " x " + height + " tiles beginning at (" + xStart + ";" + yStart + ")");
+                                // I have no idea what I'm doing but it's what Terraria is doing
+                                Tile tile = null;
+                                int value = 0;
                                 for (int y = yStart; y < yStart + height; y++)
                                 {
                                     for (int x = xStart; x < xStart + width; x++)
                                     {
-
+                                        if (value != 0)
+                                        {
+                                            value--;
+                                            _tiles[x, y] = (tile == null ? new Tile() : new Tile(tile));
+                                        }
+                                        else
+                                        {
+                                            byte b = 0;
+                                            byte b2 = 0;
+                                            tile = _tiles[x, y];
+                                            _tiles[x, y] = new Tile();
+                                            if (tile == null)
+                                                tile = _tiles[x, y];
+                                            byte b3 = r.ReadByte();
+                                            if ((b3 & 1) == 1)
+                                            {
+                                                b2 = r.ReadByte();
+                                                if ((b2 & 1) == 1)
+                                                {
+                                                    b = r.ReadByte();
+                                                }
+                                            }
+                                            bool flag = tile.IsActive();
+                                            byte b4;
+                                            if ((b3 & 2) == 2)
+                                            {
+                                                tile.Activate(true);
+                                                ushort ttype = tile.GetTileType();
+                                                int num2;
+                                                if ((b3 & 32) == 32)
+                                                {
+                                                    b4 = r.ReadByte();
+                                                    num2 = r.ReadByte();
+                                                    num2 = num2 << 8 | b4;
+                                                }
+                                                else
+                                                {
+                                                    num2 = r.ReadByte();
+                                                }
+                                                tile.SetTileType((ushort)num2);
+                                                if (_tileFrameImportant[num2])
+                                                {
+                                                    tile.SetFrames(r.ReadInt16(), r.ReadInt16());
+                                                }
+                                                else if (!flag || tile.GetTileType() != ttype)
+                                                {
+                                                    tile.SetFrames(-1, -1);
+                                                }
+                                                if ((b & 8) == 8)
+                                                {
+                                                    tile.Color(r.ReadByte());
+                                                }
+                                            }
+                                            if ((b3 & 4) == 4)
+                                            {
+                                                tile.SetWall(r.ReadByte());
+                                                if ((b & 16) == 16)
+                                                {
+                                                    tile.ColorWall(r.ReadByte());
+                                                }
+                                            }
+                                            b4 = (byte)((b3 & 24) >> 3);
+                                            if (b4 != 0)
+                                            {
+                                                tile.SetLiquid(r.ReadByte());
+                                                if (b4 > 1)
+                                                {
+                                                    // Lava and honey management
+                                                }
+                                            }
+                                            if (b2 > 1)
+                                            {
+                                                // Wires and slops management
+                                            }
+                                            if (b > 0)
+                                            {
+                                                // Some others electrical management
+                                            }
+                                            b4 = (byte)((b3 & 192) >> 6);
+                                            if (b4 == 0)
+                                            {
+                                                value = 0;
+                                            }
+                                            else if (b4 == 1)
+                                            {
+                                                value = r.ReadByte();
+                                            }
+                                            else
+                                            {
+                                                value = r.ReadInt16();
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -472,6 +571,28 @@ namespace TerrariaBot.Client
         private bool _didSpawn; // Did the player already spawned
         private static bool _cheats; // Are cheats enabled
         private Tile[,] _tiles;
+        private bool[] _tileFrameImportant;
+        private readonly int[] _importantFrames = new[]
+        {
+            377, 373, 375, 374, 461, 372,
+            358, 359, 360, 361, 362, 363, 364, 391,
+            392, 393, 394, 356, 334, 440, 300, 301, 302, 303, 304, 305, 306, 307, 308, 354, 355, 324,
+            463, 464, 466, 419, 442, 443, 444, 420, 423, 424, 428, 429, 445, 283, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 316, 317, 318,
+            410, 427, 435, 436, 437, 438, 439,
+            36, 275, 276, 277, 278, 279, 280, 281, 282, 285, 286, 414, 413, 309, 310, 339,
+            289, 299, 171, 247, 245, 246, 239, 240, 241, 242, 243, 244, 254,
+            237, 238, 235, 236, 269, 390,
+            233, 227, 228, 231,
+            216, 217, 218, 219, 200, 338, 453, 456, 165, 209, 215, 210, 212, 207, 178, 184, 185, 186, 187, 173, 174,
+            139, 149, 142, 143, 144, 136, 137, 138,
+            320,
+            380, 201, 3, 4, 5, 10, 11, 12, 13, 14, 469, 15, 16, 17, 18, 19, 20, 21, 467, 441, 468, 24, 26, 27, 28, 29, 31, 33, 34, 35,
+            42, 50, 55, 61, 71, 72, 73, 74, 77, 78, 79, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99,
+            101, 102, 103, 104, 105, 100, 106, 110, 113, 114, 125, 287, 126, 128, 129, 132, 133, 134, 135, 172, 319, 323, 335, 337,
+            349, 376, 378, 425, 465, 141, 270, 271, 314,
+            395, 405, 406, 452, 411, 457, 462, 454, 455, 412,
+            387, 386, 388, 389
+        };
         private string _name; internal string GetName() => _name;
 
         private MemoryStream _ms;
