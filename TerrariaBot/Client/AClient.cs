@@ -343,6 +343,19 @@ namespace TerrariaBot.Client
                         }
                         break;
 
+                    case NetworkRequest.TileEdit:
+                        {
+                            byte action = reader.ReadByte();
+                            short xPos = reader.ReadInt16();
+                            short yPos = reader.ReadInt16();
+                            short tileId = reader.ReadInt16();
+                            if (action == 0) // Tile destroyed
+                                _tiles[xPos, yPos] = new Tile();
+                            else
+                                _tiles[xPos, yPos] = new Tile((byte)tileId);
+                        }
+                        break;
+
                     case NetworkRequest.TogglePVP:
                         {
                             byte slot = reader.ReadByte();

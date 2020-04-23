@@ -15,6 +15,19 @@
             _frameY = 0;
         }
 
+        public Tile(byte id)
+        {
+            _type = id;
+            _wall = 0;
+            _liquid = 0;
+            _sTileHeader = 0;
+            _bTileHeader = 0;
+            _bTileHeader2 = 0;
+            _bTileHeader3 = 0;
+            _frameX = 0;
+            _frameY = 0;
+        }
+
         public Tile(Tile t) // Copy ctor, we asume t isn't null
         {
             _type = t._type;
