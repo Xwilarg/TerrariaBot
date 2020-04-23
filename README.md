@@ -52,3 +52,6 @@ Meina is a bot that have for goal to be able to play at Terraria<br/>
 
 ## So how does it works?
 If you want to understand better how Terraria client communicate you can check this repository: https://github.com/TheIndra55/terraria-research
+
+# Need more help?
+Feel free to [open an issue](https://github.com/Xwilarg/TerrariaBot/issues) or come ask [on Discord](https://discord.gg/H6wMRYV).
