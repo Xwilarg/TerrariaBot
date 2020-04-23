@@ -119,7 +119,7 @@ namespace TerrariaBot.Client
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
                         {
                             byte slot = reader.ReadByte();
-                            _me = new PlayerSelf(this, _me.GetName(), slot);
+                            _me = new PlayerSelf(this, _playerInfos.GetName(), slot);
                             _otherPlayers.Add(slot, _me);
                             LogDebug("Player slot is now " + slot);
                             SendPlayerInfoMessage();
@@ -166,11 +166,11 @@ namespace TerrariaBot.Client
                             LogDebug(ByteToBool(moonInfo, 2) ? "It's currently the blood moon" : "It's not currently the blood moon");
                             LogDebug(ByteToBool(moonInfo, 4) ? "It's currently an eclipse" : "It's not currently an eclipse");
                             LogDebug("The current moon phrase is " + moonPhase);
-                            LogDebug("Maximum world value at (" + maxTilesX + ";" + maxTilesY + ")");
-                            LogDebug("Spawn world value at (" + spawnX + ";" + spawnY + ")");
+                            LogDebug("Maximum world value at (" + (maxTilesX * blocPixelSize) + ";" + (maxTilesY * blocPixelSize) + ")");
+                            LogDebug("Spawn world value at (" + (spawnX * blocPixelSize) + ";" + (spawnY * blocPixelSize) + ")");
                             LogDebug("Surface layer is at heigth of " + surfaceY);
                             LogDebug("Rock layer is at height of " + rockY);
-                            _me.SetPosition(new Vector2(spawnX, spawnY));
+                            _me.SetPosition(new Vector2(spawnX * blocPixelSize, spawnY * blocPixelSize));
                             _tiles = new Tile[maxTilesX, maxTilesY];
                             for (int i = 0; i < maxTilesX; i++)
                                 for (int y = 0; y < maxTilesY; y++)
@@ -455,18 +455,19 @@ namespace TerrariaBot.Client
             SendWrittenBytes();
         }
 
-        internal void SendPlayerControls(Player p, byte actions)
+        internal void SendPlayerControls(Player p, byte actions, float xVel, float yVel)
         {
+            var myPos = _me.GetPosition();
             ushort length = 20;
             var writter = WriteHeader(length, NetworkRequest.PlayerControls);
             writter.Write(p.GetSlot());
             writter.Write(actions);
             writter.Write((byte)0);
             writter.Write((byte)0);
-            writter.Write(0f);
-            writter.Write(0f);
-            writter.Write(0f);
-            writter.Write(0f);
+            writter.Write(myPos.X);
+            writter.Write(myPos.Y);
+            writter.Write(xVel);
+            writter.Write(yVel);
             SendWrittenBytes();
         }
 
@@ -605,6 +606,7 @@ namespace TerrariaBot.Client
         private bool _didSpawn; // Did the player already spawned
         private Tile[,] _tiles;
         private bool[] _tileFrameImportant;
+        private const int blocPixelSize = 16; // A bloc is 16 pixels in the game
         private readonly int[] _importantFrames = new[]
         {
             377, 373, 375, 374, 461, 372,

@@ -9,9 +9,14 @@ namespace TerrariaBot.Entity
         public PlayerSelf(AClient client, string name, byte slot) : base(client, name, slot)
         { }
 
-        private void DoAction(params PlayerAction[] actions) // Doesn't work yet
+        public void DoAction(params PlayerAction[] actions)
         {
-            _client.SendPlayerControls(this, (byte)actions.Sum(x => (int)x));
+            float xVel = 0f;
+            if (actions.Contains(PlayerAction.Left))
+                xVel -= 3f;
+            if (actions.Contains(PlayerAction.Right))
+                xVel += 3f;
+            _client.SendPlayerControls(this, (byte)actions.Sum(x => (int)x), xVel, 0f);
         }
 
         /// <summary>
