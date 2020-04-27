@@ -5,8 +5,7 @@ A library to make Terraria bots in C#
 
 This is currently a work in progress so a lot of things will change in the next days.
 
-For now the bot can barely spawn on the map and do some simple stuff like changing team and enabling PVP.<br/>
-Since lot of things are handled client side, that means that the bot will have some impossible behaviour for now, such as not being able to be killed to changing color depending of the client.
+The documentation is available here: https://terrariabot.zirk.eu
 
 ## Install it
 The project is already on [NuGet](https://www.nuget.org/packages/TerrariaBot/0.3.0-alpha) as a pre-release.
@@ -52,3 +51,6 @@ Meina is a bot that have for goal to be able to play at Terraria<br/>
 
 ## So how does it works?
 If you want to understand better how Terraria client communicate you can check this repository: https://github.com/TheIndra55/terraria-research
+
+# Need more help?
+Feel free to [open an issue](https://github.com/Xwilarg/TerrariaBot/issues) or come ask [on Discord](https://discord.gg/H6wMRYV).
