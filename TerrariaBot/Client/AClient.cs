@@ -623,6 +623,7 @@ namespace TerrariaBot.Client
         private string _password; // Server password, "" if none
         private bool _didSpawn; // Did the player already spawned
         private Tile[,] _tiles;
+        internal Tile GetTile(int x, int y) => _tiles[x, y];
         private bool[] _tileFrameImportant;
         private readonly int[] _importantFrames = new[]
         {

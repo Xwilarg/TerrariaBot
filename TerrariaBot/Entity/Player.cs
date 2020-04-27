@@ -32,7 +32,33 @@ namespace TerrariaBot.Entity
             if (_velocity.X != 0 || _velocity.Y != 0)
             {
                 double ms = DateTime.Now.Subtract(_dt).TotalMilliseconds / 20.0;
+                var basePos = _position;
                 _position += _velocity * (float)ms;
+                var blocSize = BlocGroup.blocPixelSize;
+                if (_position.X > basePos.X)
+                {
+                    for (int i = (int)basePos.X; i <= (int)_position.X + blocSize; i += blocSize)
+                    {
+                        var tile = _client.GetTile(i / blocSize, (int)_position.Y / blocSize);
+                        if (BlocGroup.IsSolid(tile.GetTileType()))
+                        {
+                            _position = new Vector2(i - (blocSize * 2), _position.Y);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = (int)basePos.X; i >= (int)_position.X + blocSize; i -= blocSize)
+                    {
+                        var tile = _client.GetTile(i / blocSize, (int)_position.Y / blocSize);
+                        if (BlocGroup.IsSolid(tile.GetTileType()))
+                        {
+                            _position = new Vector2(i, _position.Y);
+                            break;
+                        }
+                    }
+                }
             }
             _dt = DateTime.Now;
         }
