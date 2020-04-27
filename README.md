@@ -10,7 +10,7 @@ The documentation is available here: https://terrariabot.zirk.eu
 ## Install it
 The project is already on [NuGet](https://www.nuget.org/packages/TerrariaBot/0.3.0-alpha) as a pre-release.
 ```
-Install-Package TerrariaBot -Version 0.3.0-alpha
+Install-Package TerrariaBot -Version 0.4.0-alpha
 ```
 
 ## Connect to another player using Steam (coming soon)
