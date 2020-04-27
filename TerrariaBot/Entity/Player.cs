@@ -40,7 +40,7 @@ namespace TerrariaBot.Entity
 
         protected AClient _client;
         protected readonly byte _slot;
-        private Vector2 _position, _velocity;
+        protected Vector2 _position, _velocity;
         private readonly string _name;
         private DateTime _dt;
     }
