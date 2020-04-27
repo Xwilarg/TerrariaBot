@@ -4,12 +4,6 @@ namespace TerrariaBot
 {
     internal static class BlocGroup
     {
-        internal static bool IsBlockSolide(Bloc bloc)
-        {
-            if ((int)bloc > 190) return true;
-            return solidBlocks.Contains(bloc) || oreBlocks.Contains(bloc) || trapBlocks.Contains(bloc);
-        }
-
         private static readonly Bloc[] solidBlocks = new[]
         {
             Bloc.Nothing, Bloc.StoneBlock, Bloc.Grass, Bloc.CorruptGrass, Bloc.EbonstoneBlock, Bloc.Wood, Bloc.GrayBrick,

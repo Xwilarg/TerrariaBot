@@ -114,7 +114,7 @@ namespace TerrariaBot.Client
                 {
                     case NetworkRequest.FatalError: // Any fatal error that occured lead here
                         reader.ReadByte();
-                        throw new System.Exception("Fatal error: " + reader.ReadString());
+                        throw new Exception("Fatal error: " + reader.ReadString());
 
                     case NetworkRequest.AuthentificationSuccess: // Authentification confirmation
                         {
@@ -170,7 +170,7 @@ namespace TerrariaBot.Client
                             LogDebug("Spawn world value at (" + (spawnX * blocPixelSize) + ";" + (spawnY * blocPixelSize) + ")");
                             LogDebug("Surface layer is at heigth of " + surfaceY);
                             LogDebug("Rock layer is at height of " + rockY);
-                            _me.SetPosition(new Vector2(spawnX * blocPixelSize, spawnY * blocPixelSize));
+                            _me.SetPosition(new Vector2(spawnX * blocPixelSize, spawnY * blocPixelSize), Vector2.Zero);
                             _tiles = new Tile[maxTilesX, maxTilesY];
                             for (int i = 0; i < maxTilesX; i++)
                                 for (int y = 0; y < maxTilesY; y++)
@@ -331,14 +331,16 @@ namespace TerrariaBot.Client
                             float posY = reader.ReadSingle();
                             var player = _otherPlayers[slot];
                             var newPos = new Vector2(posX, posY);
-                            player.SetPosition(newPos);
+                            float velX = 0f;
+                            float velY = 0f;
                             PlayerPositionUpdate?.Invoke(player, newPos);
                             if (ByteToBool(otherMovement, 4))
                             {
-                                float velX = reader.ReadSingle();
-                                float velY = reader.ReadSingle();
+                                velX = reader.ReadSingle();
+                                velY = reader.ReadSingle();
                                 LogDebug("Player " + slot + " is at (" + posX + ";" + posY + ") with a velocity of (" + velX + ";" + velY + ") " + keyInfo);
                             }
+                            player.SetPosition(newPos, new Vector2(velX, velY));
                             LogDebug("Player " + slot + " is at (" + posX + ";" + posY + ") " + keyInfo);
                         }
                         break;
@@ -471,6 +473,7 @@ namespace TerrariaBot.Client
         internal void SendPlayerControls(Player p, byte actions, float xVel, float yVel)
         {
             var myPos = _me.GetPosition();
+            _me.SetPosition(myPos, new Vector2(xVel, yVel));
             ushort length = 20;
             var writter = WriteHeader(length, NetworkRequest.PlayerControls);
             writter.Write(p.GetSlot());
@@ -486,6 +489,7 @@ namespace TerrariaBot.Client
 
         internal void SendTeleport(Player p, float x, float y)
         {
+            _me.SetPosition(new Vector2(x, y), Vector2.Zero);
             ushort length = 20;
             var writter = WriteHeader(length, NetworkRequest.PlayerControls);
             writter.Write(p.GetSlot());
@@ -640,6 +644,29 @@ namespace TerrariaBot.Client
             349, 376, 378, 425, 465, 141, 270, 271, 314,
             395, 405, 406, 452, 411, 457, 462, 454, 455, 412,
             387, 386, 388, 389
+        };
+        private readonly int[] _solidBlocks = new[]
+        {
+            379, 371, 357, 408, 409, 415, 416, 417, 418,
+            232, 311, 312, 313, 315, 321, 322, 239, 380,
+            367, 357, 368, 369, 325, 460, 326, 458, 459, 327, 345, 328, 329,
+            421, 422, 426, 430, 431, 432, 433, 434, 446, 447, 448, 427,
+            435, 436, 437, 438, 439,
+            284, 346, 347, 348, 350, 370, 383, 385, 396, 397, 399, 401, 398, 400, 402, 403, 404, 407,
+            170, 221, 272, 229, 230, 222, 223, 224, 225, 226, 235, 191, 211, 208, 192, 193, 194, 195,
+            200, 203, 204, 189, 190, 198, 206, 248, 249, 250, 251, 252, 253, 273, 274,
+            255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268,
+            202, 188, 179, 381, 180, 181, 182, 183, 196, 197, 175, 176, 177, 162, 163, 164,
+            234,
+            137, 160, 161, 145, 146, 147, 148, 138, 140, 151, 152, 153, 154, 155, 156, 157, 158, 159,
+            376, // Only top
+            127, 130, 107, 108, 111, 109, 110, 112, 116, 117, 123, 118, 119, 120, 121, 122, 150, 199,
+            0, // Need to check this value
+            1, 2, 3, 4, 5, 6, 7, 8, 9, 166, 167, 168, 169, 10, 11, 19, 22, 23, 25, 30,
+            37, 38, 39, 40, 41, 43, 44, 45, 46, 47, 48, 53, 54, 56, 57, 58, 59, 60, 63, 64, 65, 66, 67, 68, 75, 76, 70,
+            18, 14, 469, 16, 134, 114,
+            87, 88, 101,
+            384, 405, 387, 388
         };
         private string _name; internal string GetName() => _name;
 
