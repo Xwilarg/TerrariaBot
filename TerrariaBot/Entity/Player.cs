@@ -27,6 +27,19 @@ namespace TerrariaBot.Entity
             _position = pos;
             _velocity = vel;
         }
+        private void UpdateYPosition()
+        {
+            var blocSize = BlocGroup.blocPixelSize;
+            var tile = _client.GetTile((int)_position.X / blocSize, (int)_position.Y / blocSize);
+            if (BlocGroup.IsSolid(tile.GetTileType())) // The player is inside a tile
+                _position.Y--;
+            else
+            {
+                tile = _client.GetTile((int)_position.X / blocSize, ((int)_position.Y / blocSize) + 1);
+                if (!BlocGroup.IsSolid(tile.GetTileType())) // Empty tile under the player
+                    _position.Y++;
+            }
+        }
         private void UpdatePosition()
         {
             if (_velocity.X != 0 || _velocity.Y != 0)
@@ -39,6 +52,7 @@ namespace TerrariaBot.Entity
                 {
                     for (int i = (int)basePos.X; i <= (int)_position.X + blocSize; i += blocSize)
                     {
+                        UpdateYPosition();
                         var tile = _client.GetTile(i / blocSize, (int)_position.Y / blocSize);
                         if (BlocGroup.IsSolid(tile.GetTileType()))
                         {
